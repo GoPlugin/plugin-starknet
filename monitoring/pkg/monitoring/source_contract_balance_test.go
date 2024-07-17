@@ -1,0 +1,50 @@
+package monitoring
+
+import (
+	"context"
+	"math/big"
+	"testing"
+
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
+	erc20Mocks "github.com/goplugin/plugin-starknet/relayer/pkg/plugin/erc20/mocks"
+)
+
+func TestContractBalancesSource(t *testing.T) {
+	chainConfig := generateChainConfig()
+	nodeConfig := generateNodeConfig()
+
+	erc20Reader := erc20Mocks.NewERC20Reader(t)
+
+	for _, x := range nodeConfig {
+		nodeAddressFelt, err := starknetutils.HexToFelt(string(x.GetAccount()))
+		require.NoError(t, err)
+
+		erc20Reader.On(
+			"BalanceOf",
+			mock.Anything,   // ctx
+			nodeAddressFelt, // address
+		).Return(new(big.Int).SetUint64(777), nil)
+	}
+
+	erc20Reader.On(
+		"Decimals",
+		mock.Anything, // ctx
+	).Return(new(big.Int).SetUint64(18), nil)
+
+	factory := NewNodeBalancesSourceFactory(erc20Reader)
+	source, err := factory.NewSource(chainConfig, nodeConfig)
+	require.NoError(t, err)
+	rawBalanceEnvelope, err := source.Fetch(context.Background())
+	require.NoError(t, err)
+	balanceEnvelope, ok := rawBalanceEnvelope.(BalanceEnvelope)
+	require.True(t, ok)
+
+	require.Equal(t, balanceEnvelope.Decimals.Uint64(), uint64(18))
+
+	require.Equal(t, balanceEnvelope.Contracts[0].Balance.Uint64(), uint64(777))
+	require.Equal(t, balanceEnvelope.Contracts[1].Balance.Uint64(), uint64(777))
+
+}
