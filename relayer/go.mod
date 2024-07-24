@@ -10,8 +10,8 @@ require (
 	github.com/ethereum/go-ethereum v1.13.8
 	github.com/hashicorp/go-plugin v1.6.0
 	github.com/pelletier/go-toml/v2 v2.1.1
-	github.com/goplugin/plugin-common v0.1.7-0.20240625074419-c278d083facf
-	github.com/goplugin/plugin-libocr v0.0.0-20240419185742-fd3cab206b2c
+	github.com/goplugin/plugin-common latest
+	github.com/goplugin/plugin-libocr latest
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
