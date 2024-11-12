@@ -1,0 +1,38 @@
+{
+  "name": "@plugin/starknet-gauntlet-cli",
+  "version": "0.0.1",
+  "description": "Starknet Gauntlet CLI",
+  "keywords": [
+    "typescript",
+    "cli"
+  ],
+  "main": "./dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "!dist/**/*.test.js"
+  ],
+  "scripts": {
+    "gauntlet": "ts-node ./src/index.ts",
+    "lint": "tsc",
+    "test": "SKIP_PROMPTS=true jest --runInBand --config ../../jest.config.ts --selectProjects starknet-gauntlet-cli --passWithNoTests",
+    "test:coverage": "yarn test --collectCoverage",
+    "test:ci": "yarn test --ci",
+    "format": "yarn prettier --write ./src",
+    "format:check": "yarn prettier --check ./src",
+    "clean": "rm -rf ./dist/ ./bin/",
+    "build": "yarn clean && tsc -b",
+    "bundle": "yarn build && pkg ."
+  },
+  "dependencies": {
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet-oz": "*",
+    "@plugin/starknet-gauntlet-argent": "*",
+    "@plugin/starknet-gauntlet-example": "*",
+    "@plugin/starknet-gauntlet-ocr2": "*",
+    "@plugin/starknet-gauntlet-token": "*",
+    "@plugin/starknet-gauntlet-multisig": "*",
+    "@plugin/starknet-gauntlet-emergency-protocol": "*",
+    "@plugin/starknet-gauntlet-ledger": "*"
+  }
+}
