@@ -376,7 +376,7 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/slack-go/slack v0.12.2 // indirect
-	github.com/goplugin/plugin-selectors v1.0.23 // indirect
+	github.com/goplugin/chain-selectors v1.0.23 // indirect
 	github.com/goplugin/plugin-automation v0.8.0 // indirect
 	github.com/goplugin/plugin-ccip v0.0.0-20241010120731-ae3e8f4935a0 // indirect
 	github.com/goplugin/plugin-cosmos v0.5.1 // indirect
