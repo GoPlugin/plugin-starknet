@@ -16,8 +16,10 @@ require (
 	github.com/goplugin/plugin-starknet/relayer v0.1.0
 	github.com/goplugin/plugin-testing-framework/lib v1.50.11-0.20241011153842-b2804aed25b4
 	github.com/goplugin/plugin-testing-framework/seth v1.50.1
-	github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20241012135014-37f3132362ec
-	github.com/goplugin/pluginv3.0 v2.14.0-mercury-20240807.0.20241012135014-37f3132362ec
+	//github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20241012135014-37f3132362ec
+	//github.com/goplugin/pluginv3.0 v2.14.0-mercury-20240807.0.20241012135014-37f3132362ec
+	github.com/goplugin/pluginv3.0/integration-tests v2.2.0
+	github.com/goplugin/pluginv3.0 v2.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.33.0
 	go.uber.org/zap v1.27.0
