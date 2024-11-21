@@ -1,0 +1,41 @@
+import {
+  InspectCommandConfig,
+  IStarknetProvider,
+  makeInspectionCommand,
+} from '@pluginv3.0/starknet-gauntlet'
+import { InvokeTransactionReceiptResponse } from 'starknet'
+import { CATEGORIES } from '../../../lib/categories'
+import { ocr2ContractLoader } from '../../../lib/contracts'
+
+type QueryResult = {}
+
+const makeComparisionData = (provider: IStarknetProvider) => async (
+  results: any[],
+  input: null,
+  contractAddress: string,
+): Promise<{
+  toCompare: null
+  result: QueryResult
+}> => {
+  const tx = (await provider.provider.getTransactionReceipt(
+    '0x475c15d6836972234c0542044fce7784cc61e8c5654d050aacadb918d8f3021',
+  )) as InvokeTransactionReceiptResponse
+  console.log(tx.events)
+  return {
+    toCompare: null,
+    result: {},
+  }
+}
+
+const commandConfig: InspectCommandConfig<null, null, null, QueryResult> = {
+  ux: {
+    category: CATEGORIES.OCR2,
+    function: 'inspect',
+    examples: ['yarn gauntlet ocr2:inspect --network=<NETWORK>'],
+  },
+  queries: [],
+  makeComparisionData,
+  loadContract: ocr2ContractLoader,
+}
+
+export default makeInspectionCommand(commandConfig)
