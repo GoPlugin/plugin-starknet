@@ -18,6 +18,7 @@ mod MockAggregator {
     use plugin::ocr2::aggregator::IAggregator;
     use plugin::ocr2::aggregator::Aggregator::{Transmission, NewTransmission};
     use plugin::ocr2::aggregator::Round;
+    use plugin::libraries::type_and_version::ITypeAndVersion;
 
     #[event]
     use plugin::ocr2::aggregator::Aggregator::Event;
@@ -34,7 +35,7 @@ mod MockAggregator {
         self._decimals.write(decimals);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl MockImpl of super::IMockAggregator<ContractState> {
         fn set_latest_round_data(
             ref self: ContractState,
@@ -83,7 +84,14 @@ mod MockAggregator {
         }
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
+    impl TypeAndVersionImpl of ITypeAndVersion<ContractState> {
+        fn type_and_version(self: @ContractState) -> felt252 {
+            'mock_aggregator.cairo 1.0.0'
+        }
+    }
+
+    #[abi(embed_v0)]
     impl Aggregator of IAggregator<ContractState> {
         fn round_data(self: @ContractState, round_id: u128) -> Round {
             panic_with_felt252('unimplemented')
@@ -110,8 +118,10 @@ mod MockAggregator {
             'mock'
         }
 
-        fn type_and_version(self: @ContractState) -> felt252 {
-            'mock_aggregator.cairo 1.0.0'
+        fn latest_answer(self: @ContractState) -> u128 {
+            let latest_round_id = self._latest_aggregator_round_id.read();
+            let transmission = self._transmissions.read(latest_round_id);
+            transmission.answer
         }
     }
 }

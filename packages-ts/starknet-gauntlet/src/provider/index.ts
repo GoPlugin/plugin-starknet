@@ -1,11 +1,13 @@
 import { TransactionResponse } from '../transaction'
 import {
-  SequencerProvider as StarknetProvider,
+  RpcProvider as StarknetProvider,
+  DeclareContractResponse,
+  InvokeFunctionResponse,
   DeployContractResponse,
-  Sequencer,
   CompiledContract,
   Account,
   Call,
+  constants,
 } from 'starknet'
 import { IStarknetWallet } from '../wallet'
 
@@ -21,6 +23,12 @@ interface IProvider<P> {
     salt?: number,
   ) => Promise<TransactionResponse>
   deployContract: (
+    classHash: string,
+    input: any,
+    wait?: boolean,
+    salt?: number,
+  ) => Promise<TransactionResponse>
+  deployAccountContract: (
     classHash: string,
     input: any,
     wait?: boolean,
@@ -44,7 +52,7 @@ export const makeProvider = (
 
 export const wrapResponse = (
   provider: IStarknetProvider,
-  response: Sequencer.AddTransactionResponse | DeployContractResponse,
+  response: InvokeFunctionResponse | DeployContractResponse | DeclareContractResponse,
   address?: string,
 ): TransactionResponse => {
   const txResponse: TransactionResponse = {
@@ -64,7 +72,7 @@ export const wrapResponse = (
         success = false
       }
       const status = await provider.provider.getTransactionStatus(response.transaction_hash)
-      txResponse.tx.code = status.tx_status as any // For some reason, starknet does not consider any other status than "TRANSACTION_RECEIVED"
+      txResponse.code = status.finality_status // For some reason, starknet does not consider any other status than "TRANSACTION_RECEIVED"
       return { success }
     },
     status: 'PENDING',
@@ -77,15 +85,27 @@ class Provider implements IStarknetProvider {
   provider: StarknetProvider
   account: Account
 
-  constructor(baseUrl: string, wallet?: IStarknetWallet) {
-    this.provider = new StarknetProvider({ baseUrl })
+  constructor(nodeUrl: string, wallet?: IStarknetWallet) {
+    this.provider = new StarknetProvider({ nodeUrl })
     if (wallet) {
-      this.account = new Account(this.provider, wallet.getAccountAddress(), wallet.signer)
+      this.account = new Account(
+        this.provider,
+        wallet.getAccountAddress(),
+        wallet.signer,
+        /* cairoVersion= */ null, // don't set cairo version so that it's automatically detected from the contract
+        /* transactionVersion= */ constants.TRANSACTION_VERSION.V3,
+      )
     }
   }
 
   setAccount(wallet: IStarknetWallet) {
-    this.account = new Account(this.provider, wallet.getAccountAddress(), wallet.signer)
+    this.account = new Account(
+      this.provider,
+      wallet.getAccountAddress(),
+      wallet.signer,
+      /* cairoVersion= */ null,
+      /* transactionVersion= */ constants.TRANSACTION_VERSION.V3,
+    )
   }
 
   send = async () => {
@@ -108,7 +128,7 @@ class Provider implements IStarknetProvider {
     const tx = await this.account.declareAndDeploy({
       contract,
       compiledClassHash,
-      salt: salt ? '0x' + salt.toString(16) : salt, // convert number to hex or leave undefined
+      salt: !isNaN(salt) ? '0x' + salt.toString(16) : salt, // convert number to hex or leave undefined
       // unique: false,
       ...(!!input && input.length > 0 && { constructorCalldata: input }),
     })
@@ -142,8 +162,25 @@ class Provider implements IStarknetProvider {
   deployContract = async (classHash: string, input: any = [], wait = true, salt = undefined) => {
     const tx = await this.account.deployContract({
       classHash: classHash,
-      salt: salt ? '0x' + salt.toString(16) : salt,
+      salt: !isNaN(salt) ? '0x' + salt.toString(16) : salt,
       ...(!!input && input.length > 0 && { constructorCalldata: input }),
+    })
+    const response = wrapResponse(this, tx)
+
+    if (!wait) return response
+    await response.wait()
+    return response
+  }
+
+  /**
+   * Deploys an account contract using DEPLOY_ACCOUNT given a class hash
+   */
+
+  deployAccountContract = async (classHash: string, input: any = [], wait = true, salt = 0) => {
+    const tx = await this.account.deployAccount({
+      classHash: classHash,
+      constructorCalldata: input,
+      addressSalt: '0x' + salt.toString(16),
     })
     const response = wrapResponse(this, tx)
 

@@ -2,143 +2,186 @@ package txm
 
 import (
 	"fmt"
-	"math/big"
+	"sort"
 	"sync"
 
-	caigotypes "github.com/smartcontractkit/caigo/types"
+	"github.com/NethermindEth/juno/core/felt"
+	starknetrpc "github.com/NethermindEth/starknet.go/rpc"
 	"golang.org/x/exp/maps"
 )
 
-// TxStore tracks broadcast & unconfirmed txs
-type TxStore struct {
-	lock         sync.RWMutex
-	nonceToHash  map[int64]string // map nonce to txhash
-	hashToNonce  map[string]int64 // map hash to nonce
-	currentNonce *big.Int         // minimum nonce
+type UnconfirmedTx struct {
+	Hash      string
+	PublicKey *felt.Felt
+	Nonce     *felt.Felt
+	Call      starknetrpc.FunctionCall
 }
 
-func NewTxStore(current *big.Int) *TxStore {
+// TxStore tracks broadcast & unconfirmed txs per account address per chain id
+type TxStore struct {
+	lock sync.RWMutex
+
+	nextNonce         *felt.Felt
+	unconfirmedNonces map[string]*UnconfirmedTx
+}
+
+func NewTxStore(initialNonce *felt.Felt) *TxStore {
 	return &TxStore{
-		nonceToHash:  map[int64]string{},
-		hashToNonce:  map[string]int64{},
-		currentNonce: current,
+		nextNonce:         new(felt.Felt).Set(initialNonce),
+		unconfirmedNonces: map[string]*UnconfirmedTx{},
 	}
 }
 
-func (s *TxStore) Save(nonce *big.Int, hash string) error {
+func (s *TxStore) SetNextNonce(newNextNonce *felt.Felt) []*UnconfirmedTx {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if s.currentNonce.Cmp(nonce) == 1 {
-		return fmt.Errorf("nonce too low: %s < %s (lowest)", nonce, s.currentNonce)
-	}
-	if h, exists := s.nonceToHash[nonce.Int64()]; exists {
-		return fmt.Errorf("nonce used: tried to use nonce (%s) for tx (%s), already used by (%s)", nonce, hash, h)
-	}
-	if n, exists := s.hashToNonce[hash]; exists {
-		return fmt.Errorf("hash used: tried to use tx (%s) for nonce (%s), already used nonce (%d)", hash, nonce, n)
+	staleTxs := []*UnconfirmedTx{}
+	s.nextNonce = new(felt.Felt).Set(newNextNonce)
+
+	// Remove any stale transactions with nonces greater than the new next nonce.
+	for nonceStr, tx := range s.unconfirmedNonces {
+		if tx.Nonce.Cmp(s.nextNonce) >= 0 {
+			staleTxs = append(staleTxs, tx)
+			delete(s.unconfirmedNonces, nonceStr)
+		}
 	}
 
-	// store hash
-	s.nonceToHash[nonce.Int64()] = hash
-	s.hashToNonce[hash] = nonce.Int64()
+	sort.Slice(staleTxs, func(i, j int) bool {
+		a := staleTxs[i]
+		b := staleTxs[j]
+		return a.Nonce.Cmp(b.Nonce) < 0
+	})
 
-	// find next unused nonce
-	_, exists := s.nonceToHash[s.currentNonce.Int64()]
-	for exists {
-		s.currentNonce.Add(s.currentNonce, big.NewInt(1))
-		_, exists = s.nonceToHash[s.currentNonce.Int64()]
+	return staleTxs
+}
+
+func (s *TxStore) GetNextNonce() *felt.Felt {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return new(felt.Felt).Set(s.nextNonce)
+}
+
+func (s *TxStore) AddUnconfirmed(nonce *felt.Felt, hash string, call starknetrpc.FunctionCall, publicKey *felt.Felt) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if nonce.Cmp(s.nextNonce) < 0 {
+		return fmt.Errorf("tried to add an unconfirmed tx at an old nonce: expected %s, got %s", s.nextNonce, nonce)
 	}
+	if nonce.Cmp(s.nextNonce) > 0 {
+		return fmt.Errorf("tried to add an unconfirmed tx at a future nonce: expected %s, got %s", s.nextNonce, nonce)
+	}
+
+	nonceStr := nonce.String()
+	if h, exists := s.unconfirmedNonces[nonceStr]; exists {
+		return fmt.Errorf("nonce used: tried to use nonce (%s) for tx (%s), already used by (%s)", nonce, h.Hash, h)
+	}
+
+	s.unconfirmedNonces[nonceStr] = &UnconfirmedTx{
+		Nonce:     new(felt.Felt).Set(nonce),
+		PublicKey: new(felt.Felt).Set(publicKey),
+		Hash:      hash,
+		Call:      call,
+	}
+
+	s.nextNonce = new(felt.Felt).Add(s.nextNonce, new(felt.Felt).SetUint64(1))
 	return nil
 }
 
-func (s *TxStore) Confirm(hash string) error {
+func (s *TxStore) Confirm(nonce *felt.Felt, hash string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if nonce, exists := s.hashToNonce[hash]; exists {
-		delete(s.hashToNonce, hash)
-		delete(s.nonceToHash, nonce)
-		return nil
+	nonceStr := nonce.String()
+	unconfirmed, exists := s.unconfirmedNonces[nonceStr]
+	if !exists {
+		return fmt.Errorf("no such unconfirmed nonce: %s", nonce)
 	}
-	return fmt.Errorf("tx hash does not exist - it may already be confirmed: %s", hash)
+	// sanity check that the hash matches
+	if unconfirmed.Hash != hash {
+		return fmt.Errorf("unexpected tx hash: expected %s, got %s", unconfirmed.Hash, hash)
+	}
+	delete(s.unconfirmedNonces, nonceStr)
+	return nil
 }
 
-func (s *TxStore) GetUnconfirmed() []string {
+func (s *TxStore) GetUnconfirmed() []*UnconfirmedTx {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return maps.Values(s.nonceToHash)
+
+	unconfirmed := maps.Values(s.unconfirmedNonces)
+	sort.Slice(unconfirmed, func(i, j int) bool {
+		a := unconfirmed[i]
+		b := unconfirmed[j]
+		return a.Nonce.Cmp(b.Nonce) < 0
+	})
+
+	return unconfirmed
 }
 
 func (s *TxStore) InflightCount() int {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return len(s.nonceToHash)
+	return len(s.unconfirmedNonces)
 }
 
-type ChainTxStore struct {
-	store map[caigotypes.Felt]*TxStore
+type AccountStore struct {
+	store map[string]*TxStore // map account address to txstore
 	lock  sync.RWMutex
 }
 
-func NewChainTxStore() *ChainTxStore {
-	return &ChainTxStore{
-		store: map[caigotypes.Felt]*TxStore{},
+func NewAccountStore() *AccountStore {
+	return &AccountStore{
+		store: map[string]*TxStore{},
 	}
 }
 
-func (c *ChainTxStore) Save(from caigotypes.Felt, nonce *big.Int, hash string) error {
-	// use write lock for methods that modify underlying data
+func (c *AccountStore) CreateTxStore(accountAddress *felt.Felt, initialNonce *felt.Felt) (*TxStore, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	if err := c.validate(from); err != nil {
-		// if does not exist, create a new store for the address
-		c.store[from] = NewTxStore(nonce)
+	addressStr := accountAddress.String()
+	_, ok := c.store[addressStr]
+	if ok {
+		return nil, fmt.Errorf("TxStore already exists: %s", accountAddress)
 	}
-	return c.store[from].Save(nonce, hash)
+	store := NewTxStore(initialNonce)
+	c.store[addressStr] = store
+	return store, nil
 }
 
-func (c *ChainTxStore) Confirm(from caigotypes.Felt, hash string) error {
-	// use write lock for methods that modify underlying data
+// GetTxStore returns the TxStore for the provided account.
+func (c *AccountStore) GetTxStore(accountAddress *felt.Felt) *TxStore {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	if err := c.validate(from); err != nil {
-		return err
+	store, ok := c.store[accountAddress.String()]
+	if !ok {
+		return nil
 	}
-	return c.store[from].Confirm(hash)
+	return store
 }
 
-func (c *ChainTxStore) GetAllInflightCount() map[caigotypes.Felt]int {
+func (c *AccountStore) GetTotalInflightCount() int {
 	// use read lock for methods that read underlying data
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	list := map[caigotypes.Felt]int{}
-
-	for i := range c.store {
-		list[i] = c.store[i].InflightCount()
+	count := 0
+	for _, store := range c.store {
+		count += store.InflightCount()
 	}
 
-	return list
+	return count
 }
 
-func (c *ChainTxStore) GetAllUnconfirmed() map[caigotypes.Felt][]string {
+func (c *AccountStore) GetAllUnconfirmed() map[string][]*UnconfirmedTx {
 	// use read lock for methods that read underlying data
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	list := map[caigotypes.Felt][]string{}
-
-	for i := range c.store {
-		list[i] = c.store[i].GetUnconfirmed()
+	allUnconfirmed := map[string][]*UnconfirmedTx{}
+	for accountAddressStr, store := range c.store {
+		allUnconfirmed[accountAddressStr] = store.GetUnconfirmed()
 	}
-	return list
-}
-
-func (c *ChainTxStore) validate(from caigotypes.Felt) error {
-	if _, exists := c.store[from]; !exists {
-		return fmt.Errorf("from address does not exist: %s", from)
-	}
-	return nil
+	return allUnconfirmed
 }

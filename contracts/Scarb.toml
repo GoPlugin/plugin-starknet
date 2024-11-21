@@ -1,18 +1,26 @@
 [package]
 name = "plugin"
 version = "0.1.0"
+cairo-version = "2.6.3"
 description = "Plugin contracts for Starknet"
 homepage = "https://github.com/goplugin/plugin-starknet"
 
 [scripts]
 sierra = "cairo-compile . -r"
+test = "snforge test"
 # Add your own custom commands and run them with scarb run <command>
 
 # Uncomment if you want to use dependencies
 # Note: currently testing doesn't work with dependencies
 [dependencies]
-starknet = ">=1.0.0"
-openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.7.0-rc.0" }
+starknet = ">=2.6.3"
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.10.0" }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70afdf59c9976148e95cebad5cf63d75a7f" }
+alexandria_encoding = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70afdf59c9976148e95cebad5cf63d75a7f" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.27.0" }
+
+[dev-dependencies]
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70afdf59c9976148e95cebad5cf63d75a7f" }
 
 [lib]
 

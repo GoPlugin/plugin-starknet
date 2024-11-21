@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Install Nix
-        uses: cachix/install-nix-action@29bd9290ef037a3ecbdafe83cbd2185e9dd0fa0a # v20
+        uses: cachix/install-nix-action@3715ab1a11cac9e991980d7b4a28d80c7ebdd8f9 # nix:v2.24.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Parse version
@@ -31,9 +31,9 @@ jobs:
     needs: [golangci-lint-version]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Install Nix
-        uses: cachix/install-nix-action@29bd9290ef037a3ecbdafe83cbd2185e9dd0fa0a # v20
+        uses: cachix/install-nix-action@3715ab1a11cac9e991980d7b4a28d80c7ebdd8f9 # nix:v2.24.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Lint relayer
@@ -43,7 +43,7 @@ jobs:
         run: cat ./relayer/golangci-lint-relayer-report.xml
       - name: Store Golangci lint relayer report artifact
         if: always()
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: golangci-lint-relayer-report
           path: ./relayer/golangci-lint-relayer-report.xml
@@ -54,9 +54,9 @@ jobs:
     needs: [golangci-lint-version]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Install Nix
-        uses: cachix/install-nix-action@29bd9290ef037a3ecbdafe83cbd2185e9dd0fa0a # v20
+        uses: cachix/install-nix-action@3715ab1a11cac9e991980d7b4a28d80c7ebdd8f9 # nix:v2.24.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Lint ops
@@ -66,7 +66,7 @@ jobs:
         run: cat ./ops/golangci-lint-ops-report.xml
       - name: Store Golangci lint ops report artifact
         if: always()
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: golangci-lint-ops-report
           path: ./ops/golangci-lint-ops-report.xml
@@ -77,9 +77,9 @@ jobs:
     needs: [golangci-lint-version]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Install Nix
-        uses: cachix/install-nix-action@29bd9290ef037a3ecbdafe83cbd2185e9dd0fa0a # v20
+        uses: cachix/install-nix-action@3715ab1a11cac9e991980d7b4a28d80c7ebdd8f9 # nix:v2.24.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Lint integration-tests
@@ -89,7 +89,7 @@ jobs:
         run: cat ./integration-tests/golangci-lint-integration-tests-report.xml
       - name: Store Golangci lint integration tests report artifact
         if: always()
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: golangci-lint-integration-tests-report
           path: ./integration-tests/golangci-lint-integration-tests-report.xml

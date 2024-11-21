@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/goplugin/plugin-common/pkg/logger"
-	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
+	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/erc20"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 
@@ -14,8 +13,6 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-
 	log, err := logger.New()
 	if err != nil {
 		log.Fatal(err)
@@ -36,6 +33,7 @@ func main() {
 	starknetClient, err := starknet.NewClient(
 		starknetConfig.GetChainID(),
 		starknetConfig.GetRPCEndpoint(),
+		starknetConfig.GetRPCApiKey(),
 		logger.With(log, "component", "starknet-client"),
 		&readTimeout,
 	)
@@ -50,11 +48,21 @@ func main() {
 		log.Fatalw("failed to build a ocr2.Client", "error", err)
 	}
 
+	strTokenClient, err := erc20.NewClient(
+		starknetClient,
+		logger.With(log, "component", "erc20-client"),
+		starknetConfig.GetStrkTokenAddress(),
+	)
+
+	if err != nil {
+		log.Fatalw("failed to build erc20-client", "error", err)
+	}
+
 	envelopeSourceFactory := monitoring.NewEnvelopeSourceFactory(ocr2Client)
 	txResultsFactory := monitoring.NewTxResultsSourceFactory(ocr2Client)
 
-	monitor, err := relayMonitoring.NewMonitor(
-		ctx,
+	monitor, err := monitoring.NewMonitorPrometheusOnly(
+		make(chan struct{}),
 		logger.With(log, "component", "monitor"),
 		starknetConfig,
 		envelopeSourceFactory,
@@ -67,13 +75,26 @@ func main() {
 		return
 	}
 
+	// per-feed factories
 	proxySourceFactory := monitoring.NewProxySourceFactory(ocr2Client)
-	monitor.SourceFactories = append(monitor.SourceFactories, proxySourceFactory)
+	transmissionsDetailsSourceFactory := monitoring.NewTransmissionDetailsSourceFactory(ocr2Client)
+	monitor.SourceFactories = append(monitor.SourceFactories, proxySourceFactory, transmissionsDetailsSourceFactory)
 
-	prometheusExporterFactory := monitoring.NewPrometheusExporterFactory(
-		monitoring.NewMetrics(logger.With(log, "component", "starknet-metrics")),
+	metricsBuilder := monitoring.NewMetrics(logger.With(log, "component", "starknet-metrics-builder"))
+
+	prometheusExporterFactory := monitoring.NewPrometheusExporterFactory(metricsBuilder)
+	transmissionsDetailsExporterFactory := monitoring.NewTransmissionDetailsExporterFactory(metricsBuilder)
+	monitor.ExporterFactories = append(monitor.ExporterFactories, prometheusExporterFactory, transmissionsDetailsExporterFactory)
+
+	// network factories
+	nodeBalancesSourceFactory := monitoring.NewNodeBalancesSourceFactory(strTokenClient)
+	monitor.NetworkSourceFactories = append(monitor.NetworkSourceFactories, nodeBalancesSourceFactory)
+
+	nodeBalancesExporterFactory := monitoring.NewNodeBalancesExporterFactory(
+		logger.With(log, "node-balances-exporter"),
+		metricsBuilder,
 	)
-	monitor.ExporterFactories = append(monitor.ExporterFactories, prometheusExporterFactory)
+	monitor.NetworkExporterFactories = append(monitor.NetworkExporterFactories, nodeBalancesExporterFactory)
 
 	monitor.Run()
 	log.Info("monitor stopped")

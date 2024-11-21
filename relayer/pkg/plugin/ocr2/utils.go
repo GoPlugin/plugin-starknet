@@ -4,8 +4,9 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
+
+	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 )
 
 func parseEpochAndRound(felt *big.Int) (epoch uint32, round uint8) {

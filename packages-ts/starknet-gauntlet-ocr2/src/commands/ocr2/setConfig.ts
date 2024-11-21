@@ -1,3 +1,4 @@
+import fs from 'fs'
 import {
   CONTRACT_TYPES,
   AfterExecute,
@@ -7,14 +8,15 @@ import {
   bytesToFelts,
   BeforeExecute,
   getRDD,
+  tryToWriteLastConfigDigestToRDD,
 } from '@pluginv3.0/starknet-gauntlet'
 import { time, diff } from '@pluginv3.0/gauntlet-core/dist/utils'
 import { ocr2ContractLoader } from '../../lib/contracts'
 import { SetConfig, encoding, SetConfigInput } from '@pluginv3.0/gauntlet-contracts-ocr2'
 import { decodeOffchainConfigFromEventData } from '../../lib/encoding'
 import assert from 'assert'
-import { InvokeTransactionReceiptResponse } from 'starknet'
 import { getLatestOCRConfigEvent } from './inspection/configEvent'
+import { BigNumberish, GetTransactionReceiptResponse } from 'starknet'
 
 type Oracle = {
   signer: string
@@ -79,7 +81,7 @@ const makeUserInput = async (flags, args, env): Promise<SetConfigInput> => {
       offchainConfig,
       offchainConfigVersion: 2,
       secret: flags.secret || env.secret,
-      randomSecret: flags.randomSecret || undefined,
+      randomSecret: flags.randomSecret || env.randomSecret,
     }
   }
 
@@ -91,8 +93,16 @@ const makeUserInput = async (flags, args, env): Promise<SetConfigInput> => {
     offchainConfig: flags.offchainConfig,
     offchainConfigVersion: parseInt(flags.offchainConfigVersion),
     secret: flags.secret || env.secret,
-    randomSecret: flags.randomSecret || undefined,
+    randomSecret: flags.randomSecret || env.randomSecret,
   }
+}
+
+export const validateSecretsNotEmpty = async (input) => {
+  if (input.secret === undefined) {
+    throw new Error(`A secret must be provided (--secret flag or SECRET environment variable)`)
+  }
+
+  return true
 }
 
 const makeContractInput = async (
@@ -121,8 +131,9 @@ const makeContractInput = async (
   const { offchainConfig } = await encoding.serializeOffchainConfig(
     input.offchainConfig,
     input.secret,
+    input.randomSecret,
   )
-  let onchainConfig = [] // onchain config should be empty array for input (generate onchain)
+  const onchainConfig = [] // onchain config should be empty array for input (generate onchain)
   return [oracles, input.f, onchainConfig, 2, bytesToFelts(offchainConfig)]
 }
 
@@ -137,15 +148,26 @@ const beforeExecute: BeforeExecute<SetConfigInput, ContractInput> = (
     input.user.offchainConfig,
     input.user.secret,
   )
+
   const newOffchainConfig = encoding.deserializeConfig(offchainConfig)
 
-  const eventData = await getLatestOCRConfigEvent(context.provider, context.contractAddress)
-  if (eventData.length === 0) {
+  const rawEvents = await getLatestOCRConfigEvent(context.provider, context.contractAddress)
+  if (rawEvents.length === 0) {
+    // if no config set events found in the given block, throw error
+    // this should not happen if block number in latestConfigDetails is set correctly
     deps.logger.info('No previous config found, review the offchain config below:')
     deps.logger.log(newOffchainConfig)
     return
   }
-  const currOffchainConfig = decodeOffchainConfigFromEventData(eventData)
+  // assume last event found is the latest config, in the event that multiple
+  // set_config transactions ended up in the same block
+  const events = context.contract.parseEvents({
+    events: rawEvents,
+  } as GetTransactionReceiptResponse)
+  const event = events[events.length - 1]['ConfigSet']
+  const currOffchainConfig = decodeOffchainConfigFromEventData(
+    event.offchain_config as BigNumberish[],
+  )
 
   deps.logger.info(
     'Review the proposed offchain config changes below: green - added, red - deleted.',
@@ -157,20 +179,33 @@ const afterExecute: AfterExecute<SetConfigInput, ContractInput> = (context, inpu
   result,
 ) => {
   const txHash = result.responses[0].tx.hash
-  const txInfo = (await context.provider.provider.getTransactionReceipt(
-    txHash,
-  )) as InvokeTransactionReceiptResponse
-  if (txInfo.status === 'REJECTED') {
+  const txInfo = await context.provider.provider.getTransactionReceipt(txHash)
+  if (!txInfo.isSuccess()) {
     return { successfulConfiguration: false }
   }
-  const eventData = txInfo.events[0].data
+  const events = context.contract.parseEvents(txInfo)
+  const event = events[events.length - 1]['ConfigSet']
+  const offchainConfig = decodeOffchainConfigFromEventData(event.offchain_config as BigNumberish[])
 
-  const offchainConfig = decodeOffchainConfigFromEventData(eventData)
   try {
     // remove cfg keys from user input
     delete input.user.offchainConfig.configPublicKeys
     assert.deepStrictEqual(offchainConfig, input.user.offchainConfig)
     deps.logger.success('Configuration was successfully set')
+
+    // write lastConfigDigest back to RDD
+    const hexLastConfigDigest = `${(event.latest_config_digest as bigint).toString(16)}`
+    // config digest string must be exactly 32 bytes
+    const paddedHexLastConfigDigest = hexLastConfigDigest.padStart(64, '0')
+    const configDigest = `0x${paddedHexLastConfigDigest}`
+
+    await tryToWriteLastConfigDigestToRDD(
+      deps,
+      context.flags.rdd,
+      context.contract.address,
+      configDigest,
+    )
+
     return { successfulConfiguration: true }
   } catch (e) {
     deps.logger.error('Configuration set is different than provided')
@@ -181,6 +216,7 @@ const afterExecute: AfterExecute<SetConfigInput, ContractInput> = (context, inpu
 
 const commandConfig: ExecuteCommandConfig<SetConfigInput, ContractInput> = {
   ...SetConfig,
+  validations: [...SetConfig.validations, validateSecretsNotEmpty],
   makeUserInput: makeUserInput,
   makeContractInput: makeContractInput,
   loadContract: ocr2ContractLoader,

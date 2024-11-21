@@ -9,8 +9,14 @@ export const accountContractLoader = () => {
   return {
     contract: json.parse(
       fs.readFileSync(
-        `${__dirname}/../../../../node_modules/@pluginv3.0-dev/starkgate-open-zeppelin/artifacts/0.6.1/Account.cairo/Account.json`,
-        'utf8',
+        `${__dirname}/../../../../contracts/target/release/plugin_Account.contract_class.json`,
+        'utf-8',
+      ),
+    ),
+    casm: json.parse(
+      fs.readFileSync(
+        `${__dirname}/../../../../contracts/target/release/plugin_Account.compiled_contract_class.json`,
+        'utf-8',
       ),
     ),
   }

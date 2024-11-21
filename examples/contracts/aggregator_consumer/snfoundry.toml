@@ -1,0 +1,16 @@
+# A full list of RPC endpoints can be found here:
+#
+#  https://blastapi.io/public-api/starknet
+#
+[sncast.devnet]
+url = "http://127.0.0.1:5050/rpc"
+accounts-file = "$DEVNET_ACCOUNTS_FILE"
+account = "$DEVNET_ACCOUNT_NAME"
+hex-format = true
+
+[sncast.testnet]
+url = "https://starknet-sepolia.public.blastapi.io/rpc/v0_7"
+accounts-file = "$TESTNET_ACCOUNTS_FILE"
+account = "$TESTNET_ACCOUNT_NAME"
+hex-format = true
+

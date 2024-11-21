@@ -9,6 +9,8 @@ import (
 	"github.com/pelletier/go-toml/v2"
 
 	"github.com/goplugin/plugin-common/pkg/loop"
+	"github.com/goplugin/plugin-common/pkg/types/core"
+
 	pkgstarknet "github.com/goplugin/plugin-starknet/relayer/pkg/plugin"
 	starkchain "github.com/goplugin/plugin-starknet/relayer/pkg/plugin/chain"
 	stkcfg "github.com/goplugin/plugin-starknet/relayer/pkg/plugin/config"
@@ -54,7 +56,7 @@ type pluginRelayer struct {
 // [github.com/goplugin/plugin-common/pkg/loop.PluginRelayer]
 // loopKs must be an implementation that can construct a starknet keystore adapter
 // [github.com/goplugin/plugin-starknet/relayer/pkg/plugin/txm.NewKeystoreAdapter]
-func (c *pluginRelayer) NewRelayer(ctx context.Context, config string, loopKs loop.Keystore) (loop.Relayer, error) {
+func (c *pluginRelayer) NewRelayer(ctx context.Context, config string, loopKs loop.Keystore, capRegistry core.CapabilitiesRegistry) (loop.Relayer, error) {
 	d := toml.NewDecoder(strings.NewReader(config))
 	d.DisallowUnknownFields()
 	var cfg struct {
@@ -73,9 +75,9 @@ func (c *pluginRelayer) NewRelayer(ctx context.Context, config string, loopKs lo
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chain: %w", err)
 	}
-	ra := &loop.RelayerAdapter{Relayer: pkgstarknet.NewRelayer(c.Logger, chain), RelayerExt: chain}
+	r := pkgstarknet.NewRelayer(c.Logger, chain, capRegistry)
 
-	c.SubService(ra)
+	c.SubService(r)
 
-	return ra, nil
+	return r, nil
 }

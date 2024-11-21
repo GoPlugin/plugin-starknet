@@ -7,7 +7,6 @@ use starknet::class_hash::class_hash_const;
 use starknet::syscalls::deploy_syscall;
 
 use plugin::libraries::upgradeable::Upgradeable;
-use plugin::libraries::ownable::Ownable;
 use plugin::libraries::mocks::mock_upgradeable::{
     MockUpgradeable, IMockUpgradeableDispatcher, IMockUpgradeableDispatcherTrait,
     IMockUpgradeableDispatcherImpl
@@ -17,35 +16,31 @@ use plugin::libraries::mocks::mock_non_upgradeable::{
     IMockNonUpgradeableDispatcherImpl
 };
 
+use snforge_std::{
+    declare, ContractClassTrait, start_cheat_caller_address_global, stop_cheat_caller_address_global
+};
+
+
 fn setup() -> ContractAddress {
     let account: ContractAddress = contract_address_const::<777>();
-    set_caller_address(account);
+    start_cheat_caller_address_global(account);
     account
 }
 
 #[test]
-#[available_gas(2000000)]
-fn test_upgrade() {
-    let sender = setup();
-
-    // doesn't error
-    Upgradeable::upgrade(class_hash_const::<1>());
-}
-
-#[test]
-#[available_gas(2000000)]
 fn test_upgrade_and_call() {
-    let sender = setup();
+    let _ = setup();
 
     let calldata = array![];
-    let (contractAddr, _) = deploy_syscall(
-        MockUpgradeable::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    )
-        .unwrap();
+
+    let (contractAddr, _) = declare("MockUpgradeable").unwrap().deploy(@calldata).unwrap();
+
     let mockUpgradeable = IMockUpgradeableDispatcher { contract_address: contractAddr };
     assert(mockUpgradeable.foo() == true, 'should call foo');
 
-    mockUpgradeable.upgrade(MockNonUpgradeable::TEST_CLASS_HASH.try_into().unwrap());
+    let contract_class = declare("MockNonUpgradeable").unwrap();
+
+    mockUpgradeable.upgrade(contract_class.class_hash);
 
     // now, contract should be different
     let mockNonUpgradeable = IMockNonUpgradeableDispatcher { contract_address: contractAddr };
@@ -54,10 +49,9 @@ fn test_upgrade_and_call() {
 
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Class hash cannot be zero',))]
 fn test_upgrade_zero_hash() {
-    let sender = setup();
+    let _ = setup();
 
     Upgradeable::upgrade(class_hash_const::<0>());
 }

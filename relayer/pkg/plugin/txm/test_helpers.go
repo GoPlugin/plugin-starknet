@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
-	caigotypes "github.com/smartcontractkit/caigo/types"
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/goplugin/plugin-common/pkg/utils"
+	"github.com/goplugin/plugin-common/pkg/utils/tests"
 )
 
 var (
@@ -32,12 +33,12 @@ var (
 
 // SetupLocalStarknetNode sets up a local starknet node via cli, and returns the url
 func SetupLocalStarknetNode(t *testing.T) string {
+	ctx := tests.Context(t)
 	port := utils.MustRandomPort(t)
 	url := "http://127.0.0.1:" + port
 	cmd := exec.Command("starknet-devnet",
 		"--seed", "0", // use same seed for testing
 		"--port", port,
-		"--lite-mode",
 	)
 	var stdErr bytes.Buffer
 	cmd.Stderr = &stdErr
@@ -56,7 +57,11 @@ func SetupLocalStarknetNode(t *testing.T) string {
 	var ready bool
 	for i := 0; i < 30; i++ {
 		time.Sleep(time.Second)
-		res, err := http.Get(url + "/is_alive")
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url+"/is_alive", nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		res, err := http.DefaultClient.Do(req)
 		if err != nil || res.StatusCode != 200 {
 			t.Logf("API server not ready yet (attempt %d)\n", i+1)
 			continue
@@ -76,9 +81,9 @@ func TestKeys(t *testing.T, count int) (rawkeys [][]byte) {
 		if i >= count {
 			break
 		}
-
-		keyBytes := caigotypes.StrToFelt(k).Bytes()
-		rawkeys = append(rawkeys, keyBytes)
+		f, _ := starknetutils.HexToFelt(k)
+		keyBytes := f.Bytes()
+		rawkeys = append(rawkeys, keyBytes[:])
 	}
 	return rawkeys
 }

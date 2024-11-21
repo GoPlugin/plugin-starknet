@@ -4,6 +4,10 @@ use plugin::ocr2::mocks::mock_aggregator::MockAggregator;
 use starknet::contract_address_const;
 use plugin::ocr2::aggregator::Round;
 
+use snforge_std::{
+    declare, ContractClassTrait, start_cheat_caller_address_global, stop_cheat_caller_address_global
+};
+
 fn STATE() -> MockAggregator::ContractState {
     MockAggregator::contract_state_for_testing()
 }
@@ -11,12 +15,11 @@ fn STATE() -> MockAggregator::ContractState {
 fn setup() -> ContractAddress {
     let account: ContractAddress = contract_address_const::<777>();
     // Set account as default caller
-    set_caller_address(account);
+    start_cheat_caller_address_global(account);
     account
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_deploy() {
     setup();
 
@@ -28,7 +31,7 @@ fn test_deploy() {
 
     let latest_round = MockAggregator::Aggregator::latest_round_data(@state);
 
-    let zeroed_round = Round {
+    let _ = Round {
         round_id: 0, answer: 0_u128, block_num: 0_u64, started_at: 0_u64, updated_at: 0_u64
     };
 
@@ -41,7 +44,6 @@ fn test_deploy() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_set_latest_round() {
     setup();
 
@@ -57,6 +59,11 @@ fn test_set_latest_round() {
 
     assert(
         MockAggregator::Aggregator::latest_round_data(@state) == expected_round, 'round not equal'
+    );
+
+    assert(
+        MockAggregator::Aggregator::latest_answer(@state) == expected_round.answer,
+        'latest answer not equal'
     );
 }
 

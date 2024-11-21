@@ -1,3 +1,4 @@
+.snfoundry_cache
 .direnv
 artifacts/
 vendor/
@@ -164,3 +165,6 @@ integration-tests/soak/logs
 remote.test
 ztarrepo.tar.gz
 eslint-report.json
+.run.id
+.local-mock-server
+override*.toml

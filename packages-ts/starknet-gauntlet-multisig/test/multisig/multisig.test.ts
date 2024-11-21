@@ -3,47 +3,36 @@ import deployCommand from '../../src/commands/multisig/deploy'
 import setSigners from '../../src/commands/multisig/setSigners'
 import setThreshold from '../../src/commands/multisig/setThreshold'
 import { wrapCommand } from '../../src/wrapper'
-import {
-  registerExecuteCommand,
-  TIMEOUT,
-  startNetwork,
-  IntegratedDevnet,
-  LOCAL_URL,
-} from '@pluginv3.0/starknet-gauntlet/test/utils'
+import { registerExecuteCommand, TIMEOUT, LOCAL_URL } from '@pluginv3.0/starknet-gauntlet/test/utils'
 import { logger, prompt } from '@pluginv3.0/gauntlet-core/dist/utils'
 import { loadContract } from '@pluginv3.0/starknet-gauntlet'
 import { CONTRACT_LIST } from '../../src/lib/contracts'
 import { Contract } from 'starknet'
 
 describe('Multisig', () => {
-  let network: IntegratedDevnet
   let multisigContractAddress: string
   const SEED: number = 10
-  let accounts: string[] = [
-    '0x72ad5b6e5a1c114c370eeabbe700cac4fdd7be47f2ada87ad3b89d346303dec',
-    '0x467e04fd5fee4f8a0023c5da41dcdfd963f7e4a9f498a29cbc5c8d030924f5d',
-    '0x77c3cd3e09a70580db713fc0d8da7298a9739dea23d4de561eac2991cb6c300',
+  const accounts: string[] = [
+    '0x78662e7352d062084b0010068b99288486c2d8b914f6e2a55ce945f8792c8b1',
+    '0x49dfb8ce986e21d354ac93ea65e6a11f639c1934ea253e5ff14ca62eca0f38e',
+    '0x4f348398f859a55a0c80b1446c5fdc37edb3a8478a32f10764659fc241027d3',
   ]
-  let publicKeys: string[] = [
-    '0x5366dfa9668f9f51c6f4277455b34881262f12cb6b12b487877d9319a5b48bc',
-    '0x5ad457b3d822e2f1671c2046038a3bb45e6683895f7a4af266545de03e0d3e9',
-    '0x1a9dea7b74c0eee5f1873c43cc600a01ec732183d5b230efa9e945495823e9a',
+  const publicKeys: string[] = [
+    '0x7a1bb2744a7dd29bffd44341dbd78008adb4bc11733601e7eddff322ada9cb',
+    '0xb8fd4ddd415902d96f61b7ad201022d495997c2dff8eb9e0eb86253e30fabc',
+    '0x5e05d2510c6110bde03df9c1c126a1f592207d78cd9e481ac98540d5336d23c',
   ]
-  let privateKeys: string[] = [
-    '0x7b89296c6dcbac5008577eb1924770d3',
-    '0x766bad0734c2da8003cc0f2793fdcab8',
-    '0x470b9805d2d6b8777dc59a3ad035d259',
+  const privateKeys: string[] = [
+    '0xe1406455b7d66b1690803be066cbe5e',
+    '0xa20a02f0ac53692d144b20cb371a60d7',
+    '0xa641611c17d4d92bd0790074e34beeb7',
   ]
 
-  let newSignerAccount = {
-    account: '0x5cdb30a922a2d4f9836877ed76c67564ec32625458884d0f1f2aef1ae023249',
-    publicKey: '0x6a5f1d67f6b59f3a2a294c3e523731b43fccbb7230985be7399c118498faf03',
-    privateKey: '0x8ceac392904cdefcf84b683a749f9c5',
+  const newSignerAccount = {
+    account: '0xd513de92c16aa42418cf7e5b60f8022dbee1b4dfd81bcf03ebee079cfb5cb5',
+    publicKey: '0x4708e28e2424381659ea6b7dded2b3aff4b99debfcf6080160a9d098ac2214d',
+    privateKey: '0x5b4ac23628a5749277bcabbf4726b025',
   }
-
-  beforeAll(async () => {
-    network = await startNetwork({ seed: SEED })
-  }, TIMEOUT)
 
   it(
     'Deployment',
@@ -71,17 +60,18 @@ describe('Multisig', () => {
   it(
     'Set Threshold with multisig',
     async () => {
+      const myFlags = {
+        providerUrl: LOCAL_URL,
+        pk: privateKeys[0],
+        publicKey: publicKeys[0],
+        account: accounts[0],
+        multisig: multisigContractAddress,
+      }
       const deps: Dependencies = {
         logger: logger,
         prompt: prompt,
         makeEnv: (flags) => {
-          return {
-            providerUrl: LOCAL_URL,
-            pk: privateKeys[0],
-            publicKey: publicKeys[0],
-            account: accounts[0],
-            multisig: multisigContractAddress,
-          }
+          return myFlags
         },
         makeProvider: makeProvider,
         makeWallet: makeWallet,
@@ -91,6 +81,7 @@ describe('Multisig', () => {
       const command = await wrapCommand(registerExecuteCommand(setThreshold))(deps).create(
         {
           threshold: 2,
+          ...myFlags,
         },
         [multisigContractAddress],
       )
@@ -104,6 +95,7 @@ describe('Multisig', () => {
         {
           threshold: 2,
           multisigProposal: multisigProposalId,
+          ...myFlags,
         },
         [multisigContractAddress],
       )
@@ -116,6 +108,7 @@ describe('Multisig', () => {
         {
           threshold: 2,
           multisigProposal: multisigProposalId,
+          ...myFlags,
         },
         [multisigContractAddress],
       )
@@ -138,18 +131,21 @@ describe('Multisig', () => {
   it(
     'Set Signers with multisig',
     async () => {
-      let deps = (index: number): Dependencies => {
+      const myFlags = (index) => {
+        return {
+          providerUrl: LOCAL_URL,
+          pk: privateKeys[index],
+          publicKey: publicKeys[index],
+          account: accounts[index],
+          multisig: multisigContractAddress,
+        }
+      }
+      const deps = (index: number): Dependencies => {
         return {
           logger: logger,
           prompt: prompt,
           makeEnv: (flags) => {
-            return {
-              providerUrl: LOCAL_URL,
-              pk: privateKeys[index],
-              publicKey: publicKeys[index],
-              account: accounts[index],
-              multisig: multisigContractAddress,
-            }
+            return myFlags(index)
           },
           makeProvider: makeProvider,
           makeWallet: makeWallet,
@@ -162,6 +158,7 @@ describe('Multisig', () => {
       const command = await wrapCommand(registerExecuteCommand(setSigners))(deps(0)).create(
         {
           signers: accounts,
+          ...myFlags(0),
         },
         [multisigContractAddress],
       )
@@ -175,6 +172,7 @@ describe('Multisig', () => {
         {
           signers: accounts,
           multisigProposal: multisigProposalId,
+          ...myFlags(0),
         },
         [multisigContractAddress],
       )
@@ -187,6 +185,7 @@ describe('Multisig', () => {
         {
           signers: accounts,
           multisigProposal: multisigProposalId,
+          ...myFlags(1),
         },
         [multisigContractAddress],
       )
@@ -199,6 +198,7 @@ describe('Multisig', () => {
         {
           signers: accounts,
           multisigProposal: multisigProposalId,
+          ...myFlags(0),
         },
         [multisigContractAddress],
       )
@@ -217,8 +217,4 @@ describe('Multisig', () => {
     },
     TIMEOUT,
   )
-
-  afterAll(() => {
-    network.stop()
-  })
 })

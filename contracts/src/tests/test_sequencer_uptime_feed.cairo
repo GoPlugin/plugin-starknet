@@ -14,6 +14,12 @@ use option::OptionTrait;
 use core::result::ResultTrait;
 
 use plugin::emergency::sequencer_uptime_feed::SequencerUptimeFeed;
+use plugin::libraries::access_control::{
+    IAccessController, IAccessControllerDispatcher, IAccessControllerDispatcherTrait
+};
+use plugin::ocr2::aggregator_proxy::{
+    IAggregatorProxy, IAggregatorProxyDispatcher, IAggregatorProxyDispatcherTrait
+};
 use plugin::ocr2::aggregator_proxy::AggregatorProxy;
 use plugin::ocr2::aggregator_proxy::AggregatorProxy::AggregatorProxyImpl;
 use plugin::tests::test_ownable::should_implement_ownable;
@@ -22,6 +28,11 @@ use plugin::tests::test_access_controller::should_implement_access_control;
 use plugin::emergency::sequencer_uptime_feed::{
     ISequencerUptimeFeed, ISequencerUptimeFeedDispatcher, ISequencerUptimeFeedDispatcherTrait
 };
+
+use snforge_std::{
+    declare, ContractClassTrait, start_cheat_caller_address_global, stop_cheat_caller_address_global
+};
+
 
 fn PROXY() -> AggregatorProxy::ContractState {
     AggregatorProxy::contract_state_for_testing()
@@ -33,16 +44,16 @@ fn STATE() -> SequencerUptimeFeed::ContractState {
 
 fn setup() -> (ContractAddress, ContractAddress, ISequencerUptimeFeedDispatcher) {
     let account: ContractAddress = contract_address_const::<777>();
-    set_caller_address(account);
+
+    start_cheat_caller_address_global(account);
 
     // Deploy seqeuencer uptime feed
     let calldata = array![0, // initial status
      account.into() // owner
     ];
-    let (sequencerFeedAddr, _) = deploy_syscall(
-        SequencerUptimeFeed::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    )
-        .unwrap();
+
+    let (sequencerFeedAddr, _) = declare("SequencerUptimeFeed").unwrap().deploy(@calldata).unwrap();
+
     let sequencerUptimeFeed = ISequencerUptimeFeedDispatcher {
         contract_address: sequencerFeedAddr
     };
@@ -51,38 +62,34 @@ fn setup() -> (ContractAddress, ContractAddress, ISequencerUptimeFeedDispatcher)
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_ownable() {
     let (account, sequencerFeedAddr, _) = setup();
     should_implement_ownable(sequencerFeedAddr, account);
 }
 
 #[test]
-#[available_gas(3000000)]
 fn test_access_control() {
     let (account, sequencerFeedAddr, _) = setup();
     should_implement_access_control(sequencerFeedAddr, account);
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic()]
 fn test_set_l1_sender_not_owner() {
     let (_, _, sequencerUptimeFeed) = setup();
+    start_cheat_caller_address_global(contract_address_const::<111>());
     sequencerUptimeFeed.set_l1_sender(EthAddress { address: 789 });
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_set_l1_sender() {
     let (owner, _, sequencerUptimeFeed) = setup();
-    set_contract_address(owner);
+    start_cheat_caller_address_global(owner);
     sequencerUptimeFeed.set_l1_sender(EthAddress { address: 789 });
     assert(sequencerUptimeFeed.l1_sender().address == 789, 'l1_sender should be set to 789');
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('user does not have read access',))]
 fn test_latest_round_data_no_access() {
     let (owner, sequencerFeedAddr, _) = setup();
@@ -92,22 +99,36 @@ fn test_latest_round_data_no_access() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('user does not have read access',))]
-fn test_aggregator_proxy_response() {
+fn test_latest_answer_no_access() {
     let (owner, sequencerFeedAddr, _) = setup();
     let mut proxy = PROXY();
     AggregatorProxy::constructor(ref proxy, owner, sequencerFeedAddr);
+    AggregatorProxyImpl::latest_answer(@proxy);
+}
+
+#[test]
+fn test_aggregator_proxy_response() {
+    let (owner, sequencerFeedAddr, _) = setup();
+    start_cheat_caller_address_global(owner);
+    let contract = IAccessControllerDispatcher { contract_address: sequencerFeedAddr };
+    contract.add_access(owner);
+
+    let proxy = IAggregatorProxyDispatcher { contract_address: sequencerFeedAddr };
 
     // latest round data
-    let latest_round_data = AggregatorProxyImpl::latest_round_data(@proxy);
+    let latest_round_data = proxy.latest_round_data();
     assert(latest_round_data.answer == 0, 'latest_round_data should be 0');
 
+    // latest answer 
+    let latest_answer = proxy.latest_answer();
+    assert(latest_answer == 0, 'latest_answer should be 0');
+
     // description
-    let description = AggregatorProxyImpl::description(@proxy);
+    let description = proxy.description();
     assert(description == 'L2 Sequencer Uptime Status Feed', 'description does not match');
 
     // decimals
-    let decimals = AggregatorProxyImpl::decimals(@proxy);
+    let decimals = proxy.decimals();
     assert(decimals == 0, 'decimals should be 0');
 }

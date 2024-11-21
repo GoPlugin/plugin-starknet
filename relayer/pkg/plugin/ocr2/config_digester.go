@@ -1,12 +1,13 @@
 package ocr2
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"math/big"
 	"strings"
 
-	"github.com/smartcontractkit/caigo"
+	"github.com/NethermindEth/starknet.go/curve"
 
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
 
@@ -32,10 +33,10 @@ func NewOffchainConfigDigester(chainID, contract string) offchainConfigDigester 
 }
 
 // TODO: ConfigDigest is byte[32] but what we really want here is a felt
-func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.ConfigDigest, error) {
+func (d offchainConfigDigester) ConfigDigest(ctx context.Context, cfg types.ContractConfig) (types.ConfigDigest, error) {
 	configDigest := types.ConfigDigest{}
 
-	contract_address, valid := new(big.Int).SetString(strings.TrimPrefix(d.contract, "0x"), 16)
+	contractAddress, valid := new(big.Int).SetString(strings.TrimPrefix(d.contract, "0x"), 16)
 	if !valid {
 		return configDigest, errors.New("invalid contract address")
 	}
@@ -72,7 +73,7 @@ func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.Co
 	// golang... https://stackoverflow.com/questions/28625546/mixing-exploded-slices-and-regular-parameters-in-variadic-functions
 	msg := []*big.Int{
 		new(big.Int).SetBytes([]byte(d.chainID)),       // chain_id
-		contract_address,                               // contract_address
+		contractAddress,                                // contract_address
 		new(big.Int).SetUint64(cfg.ConfigCount),        // config_count
 		new(big.Int).SetInt64(int64(len(cfg.Signers))), // oracles_len
 	}
@@ -90,14 +91,14 @@ func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.Co
 	)
 	msg = append(msg, offchainConfig...) // offchain_config
 
-	digest, err := caigo.Curve.ComputeHashOnElements(msg)
+	digest, err := curve.Curve.ComputeHashOnElements(msg)
 	if err != nil {
 		return configDigest, err
 	}
 	digest.FillBytes(configDigest[:])
 
 	// set first two bytes to the digest prefix
-	pre, err := d.ConfigDigestPrefix()
+	pre, err := d.ConfigDigestPrefix(ctx)
 	if err != nil {
 		return configDigest, err
 	}
@@ -106,6 +107,6 @@ func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.Co
 	return configDigest, nil
 }
 
-func (offchainConfigDigester) ConfigDigestPrefix() (types.ConfigDigestPrefix, error) {
+func (offchainConfigDigester) ConfigDigestPrefix(ctx context.Context) (types.ConfigDigestPrefix, error) {
 	return ConfigDigestPrefixStarknet, nil
 }

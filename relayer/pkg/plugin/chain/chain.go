@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"strconv"
 
 	"github.com/pelletier/go-toml/v2"
-	"go.uber.org/multierr"
 
 	"github.com/goplugin/plugin-common/pkg/chains"
 	"github.com/goplugin/plugin-common/pkg/logger"
@@ -21,9 +21,6 @@ import (
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/db"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/txm"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
-
-	// unused module to keep in go.mod and prevent ambiguous import
-	_ "github.com/btcsuite/btcd/chaincfg/chainhash"
 )
 
 type Chain interface {
@@ -51,10 +48,10 @@ func (o *ChainOpts) Validate() (err error) {
 		return fmt.Errorf("%s is required", s)
 	}
 	if o.Logger == nil {
-		err = multierr.Append(err, required("Logger'"))
+		err = errors.Join(err, required("Logger"))
 	}
 	if o.KeyStore == nil {
-		err = multierr.Append(err, required("KeyStore"))
+		err = errors.Join(err, required("KeyStore"))
 	}
 	return
 }
@@ -92,8 +89,12 @@ func newChain(id string, cfg *config.TOMLConfig, loopKs loop.Keystore, lggr logg
 		return ch.getClient()
 	}
 
+	getFeederClient := func() (*starknet.FeederClient, error) {
+		return ch.getFeederClient(), nil
+	}
+
 	var err error
-	ch.txm, err = txm.New(lggr, loopKs, cfg, getClient)
+	ch.txm, err = txm.New(lggr, loopKs, cfg, getClient, getFeederClient)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +122,10 @@ func (c *chain) ChainID() string {
 	return c.id
 }
 
+func (c *chain) getFeederClient() *starknet.FeederClient {
+	return starknet.NewFeederClient(c.cfg.FeederURL.String())
+}
+
 // getClient returns a client, randomly selecting one from available and valid nodes
 func (c *chain) getClient() (*starknet.Client, error) {
 	var node db.Node
@@ -138,7 +143,7 @@ func (c *chain) getClient() (*starknet.Client, error) {
 	for _, i := range index {
 		node = nodes[i]
 		// create client and check
-		client, err = starknet.NewClient(node.ChainID, node.URL, c.lggr, &timeout)
+		client, err = starknet.NewClient(node.ChainID, node.URL, node.APIKey, c.lggr, &timeout)
 		// if error, try another node
 		if err != nil {
 			c.lggr.Warnw("failed to create node", "name", node.Name, "starknet-url", node.URL, "err", err.Error())
@@ -179,6 +184,29 @@ func (c *chain) HealthReport() map[string]error {
 
 func (c *chain) ID() string {
 	return c.id
+}
+
+func (c *chain) LatestHead(ctx context.Context) (types.Head, error) {
+	sc, err := c.getClient()
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	bhAndNum, err := sc.LatestBlockHashAndNumber(ctx)
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	block, err := sc.BlockByNumber(ctx, bhAndNum.BlockNumber)
+	if err != nil {
+		return types.Head{}, err
+	}
+
+	return types.Head{
+		Height:    strconv.FormatUint(bhAndNum.BlockNumber, 10),
+		Hash:      bhAndNum.BlockHash.Marshal(),
+		Timestamp: block.Timestamp,
+	}, err
 }
 
 // ChainService interface

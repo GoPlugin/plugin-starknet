@@ -8,6 +8,7 @@ import {
   Input,
   IStarknetProvider,
   IStarknetWallet,
+  tryToWriteLastConfigDigestToRDD,
 } from '@pluginv3.0/starknet-gauntlet'
 import { TransactionResponse } from '@pluginv3.0/starknet-gauntlet/dist/transaction'
 import {
@@ -75,13 +76,24 @@ export const wrapCommand = <UI, CI>(
     static create = async (flags, args) => {
       const c = new MsigCommand(flags, args)
 
-      const env = deps.makeEnv(flags)
-
-      c.wallet = await deps.makeWallet(env)
-      c.provider = deps.makeProvider(env.providerUrl, c.wallet)
-      c.contractAddress = args[0]
+      const env = await deps.makeEnv(flags)
       c.account = env.account
       c.multisigAddress = env.multisig
+
+      // NOTE: all multisig commands require the multisig address as an argument.
+      //
+      // There's two ways to provide this:
+      //   - set the MULTISIG environment variable to the address of the multisig contract
+      //   - explicitly pass the address to the command (this will override the MULTISIG env var)
+      //
+      c.contractAddress = args[0] ?? c.multisigAddress
+
+      const cmd = await registeredCommand.create(flags, [c.contractAddress])
+      c.command = cmd
+      c.wallet = cmd.wallet
+      c.provider = cmd.provider
+      c.account = cmd.account
+
       const loadResult = contractLoader()
       c.contract = loadResult.contract
       if (loadResult.casm) {
@@ -91,6 +103,8 @@ export const wrapCommand = <UI, CI>(
       c.executionContext = {
         provider: c.provider,
         wallet: c.wallet,
+        category: registeredCommand.id,
+        action: 'multisig',
         id,
         contractAddress: c.contractAddress,
         flags: flags,
@@ -103,8 +117,6 @@ export const wrapCommand = <UI, CI>(
         },
         contract: {},
       }
-
-      c.command = await registeredCommand.create(flags, [c.contractAddress])
 
       c.initialState = await c.fetchMultisigState(c.multisigAddress, c.input.user.proposalId)
 
@@ -231,11 +243,40 @@ export const wrapCommand = <UI, CI>(
       const messages = {
         [Action.EXECUTE]: `The multisig proposal reached the threshold and can be executed. Run the same command with the flag --multisigProposal=${state.proposal.id}`,
         [Action.APPROVE]: `The multisig proposal needs ${approvalsLeft} more approvals. Run the same command with the flag --multisigProposal=${state.proposal.id}`,
-        [Action.NONE]: `The multisig proposal has been executed. No more actions needed`,
+        [Action.NONE]: `The multisig proposal has been executed. No more actions needed on-chain`,
       }
       deps.logger.line()
       deps.logger.info(`${messages[state.proposal.nextAction]}`)
       deps.logger.line()
+
+      if (state.proposal.nextAction === Action.NONE) {
+        // check if the proposal has the config set event
+
+        const txHash = result.responses[0].tx.hash
+        const txInfo = await this.executionContext.provider.provider.getTransactionReceipt(txHash)
+
+        if (txInfo.isSuccess()) {
+          const contractEvents = this.command.executionContext.contract.parseEvents(txInfo)
+          const event = contractEvents[contractEvents.length - 1]['ConfigSet']
+
+          // this was a set config multisig command
+          if (event) {
+            // write lastConfigDigest back to RDD
+            const hexLastConfigDigest = `${(event.latest_config_digest as bigint).toString(16)}`
+            // config digest string must be exactly 32 bytes
+            const paddedHexLastConfigDigest = hexLastConfigDigest.padStart(64, '0')
+            const configDigest = `0x${paddedHexLastConfigDigest}`
+
+            await tryToWriteLastConfigDigestToRDD(
+              deps,
+              this.executionContext.flags.rdd,
+              this.contractAddress,
+              configDigest,
+            )
+          }
+        }
+      }
+
       return { proposalId }
     }
 
@@ -269,7 +310,7 @@ export const wrapCommand = <UI, CI>(
         deps.logger.success(`Tx executed at ${tx.hash}`)
       }
 
-      let result = {
+      const result = {
         responses: [
           {
             tx,
@@ -283,12 +324,13 @@ export const wrapCommand = <UI, CI>(
         const txInfo = (await this.provider.provider.getTransactionReceipt(
           tx.hash,
         )) as InvokeTransactionReceiptResponse
-        proposalId = Number(num.hexToDecimalString((txInfo.events[0] as any).data[1]))
+        // TODO: use contract.parseEvents?
+        proposalId = Number(num.hexToDecimalString((txInfo.events[0] as any).keys[2])) // 0 == event_id, 1 == executor, 2 == nonce/proposal_id
       }
 
       const data = await this.afterExecute(result, proposalId)
 
-      return !!data ? { ...result, data: { ...data } } : result
+      return data ? { ...result, data: { ...data } } : result
     }
   }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/goplugin/plugin-testing-framework/gauntlet"
+	"github.com/goplugin/plugin-testing-framework/lib/gauntlet"
 )
 
 var (
@@ -20,7 +20,7 @@ type StarknetGauntlet struct {
 }
 
 // GauntletResponse Default response output for starknet gauntlet commands
-type GauntletResponse struct {
+type GauntletResponse struct { //nolint:revive
 	Responses []struct {
 		Tx struct {
 			Hash    string `json:"hash"`
@@ -57,8 +57,8 @@ func NewStarknetGauntlet(workingDir string) (*StarknetGauntlet, error) {
 	return sg, nil
 }
 
-// FetchGauntletJsonOutput Parse gauntlet json response that is generated after yarn gauntlet command execution
-func (sg *StarknetGauntlet) FetchGauntletJsonOutput() (*GauntletResponse, error) {
+// FetchGauntletJSONOutput Parse gauntlet json response that is generated after yarn gauntlet command execution
+func (sg *StarknetGauntlet) FetchGauntletJSONOutput() (*GauntletResponse, error) {
 	var payload = &GauntletResponse{}
 	gauntletOutput, err := os.ReadFile(sg.dir + "report.json")
 	if err != nil {
@@ -72,8 +72,10 @@ func (sg *StarknetGauntlet) FetchGauntletJsonOutput() (*GauntletResponse, error)
 }
 
 // SetupNetwork Sets up a new network and sets the NODE_URL for Devnet / Starknet RPC
-func (sg *StarknetGauntlet) SetupNetwork(addr string) error {
+func (sg *StarknetGauntlet) SetupNetwork(addr string, account string, privateKey string) error {
 	sg.G.AddNetworkConfigVar("NODE_URL", addr)
+	sg.G.AddNetworkConfigVar("ACCOUNT", account)
+	sg.G.AddNetworkConfigVar("PRIVATE_KEY", privateKey)
 	err := sg.G.WriteNetworkConfigMap(sg.dir + "packages-ts/starknet-gauntlet-cli/networks/")
 	if err != nil {
 		return err
@@ -97,7 +99,7 @@ func (sg *StarknetGauntlet) DeployAccountContract(salt int64, pubKey string) (st
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -109,7 +111,7 @@ func (sg *StarknetGauntlet) DeployLinkTokenContract() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -121,7 +123,7 @@ func (sg *StarknetGauntlet) MintLinkToken(token, to, amount string) (string, err
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -133,7 +135,7 @@ func (sg *StarknetGauntlet) TransferToken(token, to, amount string) (string, err
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +147,7 @@ func (sg *StarknetGauntlet) DeployOCR2ControllerContract(minSubmissionValue int6
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -157,7 +159,7 @@ func (sg *StarknetGauntlet) DeployAccessControllerContract() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +171,7 @@ func (sg *StarknetGauntlet) DeployOCR2ProxyContract(aggregator string) (string, 
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -181,7 +183,7 @@ func (sg *StarknetGauntlet) SetOCRBilling(observationPaymentGjuels int64, transm
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -193,7 +195,7 @@ func (sg *StarknetGauntlet) SetConfigDetails(cfg string, ocrAddress string) (str
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}
@@ -205,7 +207,7 @@ func (sg *StarknetGauntlet) AddAccess(aggregator, address string) (string, error
 	if err != nil {
 		return "", err
 	}
-	sg.gr, err = sg.FetchGauntletJsonOutput()
+	sg.gr, err = sg.FetchGauntletJSONOutput()
 	if err != nil {
 		return "", err
 	}

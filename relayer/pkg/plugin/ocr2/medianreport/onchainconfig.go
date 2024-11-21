@@ -1,13 +1,10 @@
 package medianreport
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
-	"github.com/pkg/errors"
-	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
-
-	caigotypes "github.com/smartcontractkit/caigo/types"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/reportingplugin/median"
 )
 
@@ -46,23 +43,14 @@ func (codec OnchainConfigCodec) DecodeToFelts(b []byte) ([]*big.Int, error) {
 }
 
 // Decode converts the onchainconfig via the outputs of DecodeToFelts into unsigned big.Ints that libocr expects
-func (codec OnchainConfigCodec) Decode(b []byte) (median.OnchainConfig, error) {
+func (codec OnchainConfigCodec) Decode(ctx context.Context, b []byte) (median.OnchainConfig, error) {
 	felts, err := codec.DecodeToFelts(b)
 	if err != nil {
 		return median.OnchainConfig{}, err
 	}
 
-	// convert felts to big.Ints
-
-	min, err := starknet.FeltToUnsignedBig(caigotypes.BigToFelt(felts[1]))
-	if err != nil {
-		return median.OnchainConfig{}, errors.Wrap(err, "min invalid")
-	}
-
-	max, err := starknet.FeltToUnsignedBig(caigotypes.BigToFelt(felts[2]))
-	if err != nil {
-		return median.OnchainConfig{}, errors.Wrap(err, "max invalid")
-	}
+	min := felts[1]
+	max := felts[2]
 
 	if !(min.Cmp(max) <= 0) {
 		return median.OnchainConfig{}, fmt.Errorf("OnchainConfig min (%v) should not be greater than max(%v)", min, max)
@@ -94,6 +82,6 @@ func (codec OnchainConfigCodec) EncodeFromFelt(version, min, max *big.Int) ([]by
 }
 
 // Encode takes the interface that libocr uses (big.Ints) and serializes it into 3 felts
-func (codec OnchainConfigCodec) Encode(c median.OnchainConfig) ([]byte, error) {
+func (codec OnchainConfigCodec) Encode(ctx context.Context, c median.OnchainConfig) ([]byte, error) {
 	return codec.EncodeFromFelt(big.NewInt(OnchainConfigVersion), c.Min, c.Max)
 }

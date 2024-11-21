@@ -1,21 +1,5 @@
 package ops
 
-import (
-	"math/big"
-
-	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/txm"
-)
-
-var (
-	// seed = 0 keys for starknet-devnet
-	PrivateKeys0Seed = txm.PrivateKeys0Seed
-
-	// devnet key derivation
-	// https://github.com/Shard-Labs/starknet-devnet/blob/master/starknet_devnet/account.py
-	DevnetClassHash, _ = new(big.Int).SetString("1803505466663265559571280894381905521939782500874858933595227108099796801620", 10)
-	DevnetSalt         = big.NewInt(20)
-)
-
 // OCR2Config Default config for OCR2 for starknet
 type OCR2Config struct {
 	F                     int             `json:"f"`
@@ -36,7 +20,7 @@ type OffchainConfig struct {
 	RMax                                               int                    `json:"rMax"`
 	S                                                  []int                  `json:"s"`
 	OffchainPublicKeys                                 []string               `json:"offchainPublicKeys"`
-	PeerIds                                            []string               `json:"peerIds"`
+	PeerIDs                                            []string               `json:"peerIds"`
 	ReportingPluginConfig                              *ReportingPluginConfig `json:"reportingPluginConfig"`
 	MaxDurationQueryNanoseconds                        int                    `json:"maxDurationQueryNanoseconds"`
 	MaxDurationObservationNanoseconds                  int                    `json:"maxDurationObservationNanoseconds"`
@@ -60,15 +44,16 @@ var TestOCR2Config = OCR2Config{
 	// Transmitters:  txKeys, // user defined
 	OnchainConfig: "",
 	OffchainConfig: &OffchainConfig{
-		DeltaProgressNanoseconds: 8000000000,
-		DeltaResendNanoseconds:   30000000000,
-		DeltaRoundNanoseconds:    3000000000,
-		DeltaGraceNanoseconds:    1000000000,
-		DeltaStageNanoseconds:    20000000000,
+		// todo: increase delta round but decrease delta stage
+		DeltaProgressNanoseconds: 150000000000, // 120s
+		DeltaResendNanoseconds:   150000000000, // 150s
+		DeltaRoundNanoseconds:    90000000000,  // 90s
+		DeltaGraceNanoseconds:    5000000000,   // 5s
+		DeltaStageNanoseconds:    30000000000,  // 20s
 		RMax:                     5,
-		S:                        []int{1, 2},
+		S:                        []int{1, 1}, // Needs to array with length of transmitting nodes
 		// OffchainPublicKeys:       offChainKeys, // user defined
-		// PeerIds:                  peerIds, // user defined
+		// PeerIDs:                  peerIds, // user defined
 		ReportingPluginConfig: &ReportingPluginConfig{
 			AlphaReportInfinite: false,
 			AlphaReportPpb:      0,

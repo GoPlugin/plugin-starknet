@@ -1,37 +1,27 @@
-import deployOZCommand from '@pluginv3.0/starknet-gauntlet-oz/src/commands/account/deploy'
+import { Deploy as deployOZCommand } from '@pluginv3.0/starknet-gauntlet-oz/src/commands/account/deploy'
 import deployTokenCommand from '../../src/commands/token/deploy'
 import mintTokensCommand from '../../src/commands/token/mint'
 import transferTokensCommand from '../../src/commands/token/transfer'
 import balanceOfCommand from '../../src/commands/inspection/balanceOf'
-
 import {
+  StarknetAccount,
+  fetchAccount,
   registerExecuteCommand,
   registerInspectCommand,
   TIMEOUT,
-  startNetwork,
-  IntegratedDevnet,
 } from '@pluginv3.0/starknet-gauntlet/test/utils'
 
 describe('Token Contract', () => {
-  let network: IntegratedDevnet
-
-  let defaultAccount: string
-  let defaultPk: string
-  let defaultBalance: number
+  let defaultAccount: StarknetAccount
 
   let ozAccount: string
-  let ozPk: string
   let ozBalance: number
 
   let tokenContractAddress: string
 
   beforeAll(async () => {
-    network = await startNetwork({ seed: 0 })
-
     // account #0 with seed 0
-    defaultAccount = '0x7e00d496e324876bbc8531f2d9a82bf154d1a04a50218ee74cdd372f75a551a'
-    defaultPk = '0xe3e70682c2094cac629f6fbed82c07cd'
-    defaultBalance = 0
+    defaultAccount = await fetchAccount()
   }, TIMEOUT)
 
   it(
@@ -43,7 +33,6 @@ describe('Token Contract', () => {
       expect(report.responses[0].tx.status).toEqual('ACCEPTED')
 
       ozAccount = report.responses[0].contract
-      ozPk = report.data.privateKey
       ozBalance = 0
     },
     TIMEOUT,
@@ -54,8 +43,8 @@ describe('Token Contract', () => {
     async () => {
       const command = await registerExecuteCommand(deployTokenCommand).create(
         {
-          account: defaultAccount,
-          pk: defaultPk,
+          account: defaultAccount.address,
+          pk: defaultAccount.privateKey,
           link: true,
         },
         [],
@@ -76,25 +65,25 @@ describe('Token Contract', () => {
 
       const executeCommand = await registerExecuteCommand(mintTokensCommand).create(
         {
-          account: defaultAccount,
-          pk: defaultPk,
-          recipient: defaultAccount,
+          account: defaultAccount.address,
+          pk: defaultAccount.privateKey,
+          recipient: defaultAccount.address,
           amount,
         },
         [tokenContractAddress],
       )
       let report = await executeCommand.execute()
       expect(report.responses[0].tx.status).toEqual('ACCEPTED')
-      defaultBalance = amount
+      defaultAccount.balance = amount
 
       const inspectCommand = await registerInspectCommand(balanceOfCommand).create(
         {
-          address: defaultAccount,
+          address: defaultAccount.address,
         },
         [tokenContractAddress],
       )
       report = await inspectCommand.execute()
-      expect(report.data?.data?.balance).toEqual(defaultBalance.toString())
+      expect(report.data?.data?.balance).toEqual(defaultAccount.balance.toString())
     },
     TIMEOUT,
   )
@@ -106,8 +95,8 @@ describe('Token Contract', () => {
 
       const executeCommand = await registerExecuteCommand(transferTokensCommand).create(
         {
-          account: defaultAccount,
-          pk: defaultPk,
+          account: defaultAccount.address,
+          pk: defaultAccount.privateKey,
           recipient: ozAccount,
           amount,
         },
@@ -128,8 +117,4 @@ describe('Token Contract', () => {
     },
     TIMEOUT,
   )
-
-  afterAll(() => {
-    network.stop()
-  })
 })
