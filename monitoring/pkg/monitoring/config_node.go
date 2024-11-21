@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 )
 
 type StarknetNodeConfig struct {

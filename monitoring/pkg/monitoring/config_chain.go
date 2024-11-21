@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 )
 
 type StarknetConfig struct {

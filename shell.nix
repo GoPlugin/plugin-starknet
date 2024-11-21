@@ -3,6 +3,8 @@
 # juno requires building with clang, not gcc
 (pkgs.mkShell.override { stdenv = pkgs.clangStdenv; }) {
   buildInputs = with pkgs; [
+    stdenv.cc.cc.lib
+    (rust-bin.stable.latest.default.override { extensions = ["rust-src"]; })
     python39
     python39Packages.pip
     python39Packages.venvShellHook
@@ -15,10 +17,10 @@
     nodePackages.typescript-language-server
     nodePackages.npm
 
-    go_1_20
+    go_1_21
     gopls
     delve
-    golangci-lint
+    (golangci-lint.override { buildGoModule = buildGo121Module; })
     gotools
 
     kube3d
@@ -33,12 +35,7 @@
   ];
 
   LD_LIBRARY_PATH = lib.makeLibraryPath [pkgs.zlib stdenv.cc.cc.lib]; # lib64
-  HELM_REPOSITORY_CONFIG=./.helm-repositories.yaml;
+  HELM_REPOSITORY_CONFIG = "./.helm-repositories.yaml";
 
   venvDir = "./.venv";
-
-  postShellHook = ''
-    pip install -r ${./contracts/requirements.txt} -c ${./contracts/constraints.txt}
-    helm repo update
-  '';
 }

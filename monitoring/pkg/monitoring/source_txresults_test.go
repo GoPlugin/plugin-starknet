@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 	ocr2Mocks "github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2/mocks"

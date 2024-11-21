@@ -9,11 +9,12 @@ import (
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/txm"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 
-	"github.com/goplugin/plugin-relay/pkg/logger"
-	relaytypes "github.com/goplugin/plugin-relay/pkg/types"
-	"github.com/goplugin/plugin-relay/pkg/utils"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/reportingplugin/median"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
+
+	"github.com/goplugin/plugin-common/pkg/logger"
+	relaytypes "github.com/goplugin/plugin-common/pkg/types"
+	"github.com/goplugin/plugin-common/pkg/utils"
 )
 
 var _ relaytypes.ConfigProvider = (*configProvider)(nil)
@@ -150,4 +151,8 @@ func (p *medianProvider) MedianContract() median.MedianContract {
 
 func (p *medianProvider) OnchainConfigCodec() median.OnchainConfigCodec {
 	return medianreport.OnchainConfigCodec{}
+}
+
+func (p *medianProvider) ChainReader() relaytypes.ChainReader {
+	return nil
 }

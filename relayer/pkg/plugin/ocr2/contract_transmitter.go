@@ -20,9 +20,9 @@ var _ types.ContractTransmitter = (*contractTransmitter)(nil)
 type contractTransmitter struct {
 	reader *transmissionsCache
 
-	contractAddress caigotypes.Hash
-	senderAddress   caigotypes.Hash
-	accountAddress  caigotypes.Hash
+	contractAddress caigotypes.Felt
+	senderAddress   caigotypes.Felt
+	accountAddress  caigotypes.Felt
 
 	txm txm.TxManager
 }
@@ -36,9 +36,9 @@ func NewContractTransmitter(
 ) *contractTransmitter {
 	return &contractTransmitter{
 		reader:          reader,
-		contractAddress: caigotypes.HexToHash(contractAddress),
-		senderAddress:   caigotypes.HexToHash(senderAddress),
-		accountAddress:  caigotypes.HexToHash(accountAddress),
+		contractAddress: caigotypes.StrToFelt(contractAddress),
+		senderAddress:   caigotypes.StrToFelt(senderAddress),
+		accountAddress:  caigotypes.StrToFelt(accountAddress),
 		txm:             txm,
 	}
 }
@@ -108,6 +108,6 @@ func (c *contractTransmitter) LatestConfigDigestAndEpoch(
 	return
 }
 
-func (c *contractTransmitter) FromAccount() types.Account {
-	return types.Account(c.senderAddress.String())
+func (c *contractTransmitter) FromAccount() (types.Account, error) {
+	return types.Account(c.accountAddress.String()), nil
 }

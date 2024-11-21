@@ -1,4 +1,3 @@
-import { BN } from '@pluginv3.0/gauntlet-core/dist/utils'
 import { makeProvider } from '@pluginv3.0/starknet-gauntlet'
 import { Contract } from 'starknet'
 import deployCommand from '../../src/commands/example/deploy'
@@ -22,7 +21,7 @@ const getBalance = async (address: string) => {
   )
   const balance = await contract.get_balance()
 
-  return new BN(balance.res).toString()
+  return BigInt(balance.res).toString()
 }
 
 describe('Example Contract', () => {

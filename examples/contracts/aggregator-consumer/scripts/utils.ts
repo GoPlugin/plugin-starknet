@@ -1,22 +1,8 @@
 import fs from 'fs'
 import dotenv from 'dotenv'
-import { CompiledContract, json, ec, Account, Provider, constants } from 'starknet'
+import { CompiledContract, json, ec, Account, Provider, constants, CairoAssembly } from 'starknet'
 
 const DEVNET_NAME = 'devnet'
-
-export const loadContract = (name: string): CompiledContract => {
-  return json.parse(
-    fs
-      .readFileSync(`${__dirname}/../starknet-artifacts/contracts/${name}.cairo/${name}.json`)
-      .toString('ascii'),
-  )
-}
-
-export const loadContractPath = (path: string, name: string): CompiledContract => {
-  return json.parse(
-    fs.readFileSync(`${__dirname}/${path}/${name}.cairo/${name}.json`).toString('ascii'),
-  )
-}
 
 export const loadContract_Account = (name: string): CompiledContract => {
   return json.parse(
@@ -26,6 +12,26 @@ export const loadContract_Account = (name: string): CompiledContract => {
       )
       .toString('ascii'),
   )
+}
+
+export const loadContract = (name: string): CompiledContract => {
+  return json.parse(
+    fs
+      .readFileSync(`${__dirname}/../target/release/plugin_examples_${name}.sierra.json`)
+      .toString('ascii'),
+  )
+}
+
+export const loadCasmContract = (name: string): CairoAssembly => {
+  return json.parse(
+    fs
+      .readFileSync(`${__dirname}/../target/release/plugin_examples_${name}.casm.json`)
+      .toString('ascii'),
+  )
+}
+
+export const loadContractPath = (path: string): CompiledContract | CairoAssembly => {
+  return json.parse(fs.readFileSync(`${__dirname}/${path}.json`).toString('ascii'))
 }
 
 export const loadContract_Solidity = (path: string, name: string): any => {

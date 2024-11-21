@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	caigotypes "github.com/smartcontractkit/caigo/types"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 )
@@ -27,7 +29,7 @@ func (s *txResultsSourceFactory) NewSource(
 	feedConfig relayMonitoring.FeedConfig,
 ) (relayMonitoring.Source, error) {
 	return &txResultsSource{
-		feedConfig.GetContractAddress(),
+		caigotypes.HexToHash(feedConfig.GetContractAddress()),
 		s.ocr2Reader,
 		0,
 		sync.Mutex{},
@@ -39,7 +41,7 @@ func (s *txResultsSourceFactory) GetType() string {
 }
 
 type txResultsSource struct {
-	contractAddress string
+	contractAddress caigotypes.Hash
 	ocr2Reader      ocr2.OCR2Reader
 
 	prevRoundID   uint32

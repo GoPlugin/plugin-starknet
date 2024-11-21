@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/rs/zerolog/log"
-	"github.com/goplugin/plugin-env/client"
-	"github.com/goplugin/plugin-env/config"
-	"github.com/goplugin/plugin-env/environment"
+
+	"github.com/goplugin/plugin-testing-framework/k8s/client"
+	"github.com/goplugin/plugin-testing-framework/k8s/config"
+	"github.com/goplugin/plugin-testing-framework/k8s/environment"
+
 	"github.com/goplugin/plugin-starknet/ops/utils"
 )
 
@@ -71,7 +73,7 @@ func defaultProps() map[string]any {
 		"starknet-dev": map[string]any{
 			"image": map[string]any{
 				"image":   "shardlabs/starknet-devnet",
-				"version": "v0.3.5",
+				"version": "v0.6.0",
 			},
 			"resources": map[string]any{
 				"requests": map[string]any{

@@ -5,11 +5,12 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/goplugin/plugin-starknet/integration-tests/common"
 	"github.com/goplugin/plugin-starknet/ops/gauntlet"
 	"github.com/goplugin/plugin-starknet/ops/utils"
 	"github.com/goplugin/pluginv3.0/integration-tests/client"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -30,21 +31,21 @@ var (
 			`
 )
 
-func createKeys(testState *testing.T) ([]*client.Plugin, error) {
+func createKeys(testState *testing.T) ([]*client.PluginK8sClient, error) {
 	urls := [][]string{
 		// Node access params
 		{"NODE_URL", "NODE_USER", "NODE_PASS"},
 	}
-	var clients []*client.Plugin
+	var clients []*client.PluginK8sClient
 
 	for _, nodeUrl := range urls {
 		u, _ := url.Parse(nodeUrl[0])
-		c, err := client.NewPlugin(&client.PluginConfig{
-			URL:      nodeUrl[0],
-			Email:    nodeUrl[1],
-			Password: nodeUrl[2],
-			RemoteIP: u.Host,
-		})
+		c, err := client.NewPluginK8sClient(&client.PluginConfig{
+			URL:        nodeUrl[0],
+			Email:      nodeUrl[1],
+			Password:   nodeUrl[2],
+			InternalIP: u.Host,
+		}, "", "")
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +67,7 @@ func TestOCRBasic(testState *testing.T) {
 	t.Common.P2PPort = P2pPort
 	t.Cc.PluginNodes, err = createKeys(testState)
 	require.NoError(testState, err)
-	t.Cc.NKeys, _, err = client.CreateNodeKeysBundle(t.Cc.PluginNodes, t.Common.ChainName, t.Common.ChainId)
+	t.Cc.NKeys, _, err = client.CreateNodeKeysBundle(t.GetPluginNodes(), t.Common.ChainName, t.Common.ChainId)
 	require.NoError(testState, err)
 	for _, n := range t.Cc.PluginNodes {
 		_, _, err = n.CreateStarkNetChain(&client.StarkNetChainAttributes{

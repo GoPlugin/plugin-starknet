@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/goplugin/plugin-relay/pkg/logger"
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	"github.com/goplugin/plugin-common/pkg/logger"
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"

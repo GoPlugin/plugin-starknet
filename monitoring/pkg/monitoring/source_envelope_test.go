@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dontpanicdao/caigo"
-	caigotypes "github.com/dontpanicdao/caigo/types"
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	"github.com/smartcontractkit/caigo"
+	caigotypes "github.com/smartcontractkit/caigo/types"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 

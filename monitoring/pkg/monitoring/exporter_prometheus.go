@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 )
 
 // NewPrometheusExporterFactory builds an implementation of the Exporter for prometheus.

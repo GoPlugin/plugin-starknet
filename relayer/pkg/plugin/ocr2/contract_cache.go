@@ -8,9 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/goplugin/plugin-relay/pkg/logger"
-	"github.com/goplugin/plugin-relay/pkg/utils"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
+
+	"github.com/goplugin/plugin-common/pkg/logger"
+	"github.com/goplugin/plugin-common/pkg/utils"
 )
 
 type Tracker interface {

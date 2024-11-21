@@ -3,22 +3,34 @@ import {
   ExecuteCommandConfig,
   ExecutionContext,
   makeExecuteCommand,
+  isValidAddress,
 } from '@pluginv3.0/starknet-gauntlet'
 import { CATEGORIES } from '../../lib/categories'
 import { tokenContractLoader, CONTRACT_LIST } from '../../lib/contracts'
 
 type UserInput = {
+  minter?: string
   owner?: string
+  classHash?: string
 }
 
-type ContractInput = [owner: string]
+type ContractInput = [minter: string, owner: string]
 
 const makeUserInput = async (flags, args): Promise<UserInput> => {
   if (flags.input) return flags.input as UserInput
 
   return {
+    minter: flags.minter,
     owner: flags.owner,
+    classHash: flags.classHash,
   }
+}
+
+const validateClassHash = async (input) => {
+  if (isValidAddress(input.classHash) || input.classHash === undefined) {
+    return true
+  }
+  throw new Error(`Invalid Class Hash: ${input.classHash}`)
 }
 
 const makeContractInput = async (
@@ -26,7 +38,7 @@ const makeContractInput = async (
   context: ExecutionContext,
 ): Promise<ContractInput> => {
   const defaultWallet = context.wallet.getAccountAddress()
-  return [input.owner || defaultWallet]
+  return [input.minter || defaultWallet, input.owner || defaultWallet]
 }
 
 const beforeExecute: BeforeExecute<UserInput, ContractInput> = (
@@ -48,11 +60,12 @@ const commandConfig: ExecuteCommandConfig<UserInput, ContractInput> = {
     examples: [
       `${CATEGORIES.TOKEN}:deploy --network=<NETWORK>`,
       `${CATEGORIES.TOKEN}:deploy --network=<NETWORK> --owner=<ACCOUNT_ADDRESS>`,
+      `${CATEGORIES.TOKEN}:deploy --network=<NETWORK> --owner=<ACCOUNT_ADDRESS> --classHash=<CLASS_HASH>`,
     ],
   },
   makeUserInput,
   makeContractInput,
-  validations: [],
+  validations: [validateClassHash],
   loadContract: tokenContractLoader,
   hooks: {
     beforeExecute,

@@ -8,18 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dontpanicdao/caigo/gateway"
 	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	uuid "github.com/satori/go.uuid"
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/goplugin/plugin-env/environment"
-	"github.com/goplugin/plugin-env/pkg/alias"
-	"github.com/goplugin/plugin-env/pkg/helm/plugin"
-	"github.com/goplugin/plugin-env/pkg/helm/mockserver"
-	mockservercfg "github.com/goplugin/plugin-env/pkg/helm/mockserver-cfg"
+	"github.com/smartcontractkit/caigo/gateway"
+
 	"github.com/goplugin/plugin-starknet/ops/devnet"
+	"github.com/goplugin/plugin-testing-framework/k8s/environment"
+	"github.com/goplugin/plugin-testing-framework/k8s/pkg/alias"
+	"github.com/goplugin/plugin-testing-framework/k8s/pkg/helm/plugin"
+	mock_adapter "github.com/goplugin/plugin-testing-framework/k8s/pkg/helm/mock-adapter"
 	"github.com/goplugin/pluginv3.0/integration-tests/client"
 	"github.com/goplugin/pluginv3.0/v2/core/services/job"
 	"github.com/goplugin/pluginv3.0/v2/core/services/relay"
@@ -42,6 +42,7 @@ type Common struct {
 	ChainId             string
 	NodeCount           int
 	TTL                 time.Duration
+	TestDuration        time.Duration
 	Testnet             bool
 	L2RPCUrl            string
 	PrivateKey          string
@@ -76,17 +77,30 @@ func New() *Common {
 	if ttlValue != "" {
 		duration, err := time.ParseDuration(ttlValue)
 		if err != nil {
-			panic(fmt.Sprintf("Please define a proper duration for the test: %v", err))
+			panic(fmt.Sprintf("Please define a proper duration for the namespace: %v", err))
 		}
 		c.TTL, err = time.ParseDuration(*alias.ShortDur(duration))
 		if err != nil {
-			panic(fmt.Sprintf("Please define a proper duration for the test: %v", err))
+			panic(fmt.Sprintf("Please define a proper duration for the namespace: %v", err))
 		}
 	} else {
 		panic("Please define TTL of env")
 	}
 
 	// Setting optional parameters
+	testDurationValue := getEnv("TEST_DURATION")
+	if testDurationValue != "" {
+		duration, err := time.ParseDuration(testDurationValue)
+		if err != nil {
+			panic(fmt.Sprintf("Please define a proper duration for the test: %v", err))
+		}
+		c.TestDuration, err = time.ParseDuration(*alias.ShortDur(duration))
+		if err != nil {
+			panic(fmt.Sprintf("Please define a proper duration for the test: %v", err))
+		}
+	} else {
+		c.TestDuration = time.Duration(time.Minute * 15)
+	}
 	c.L2RPCUrl = getEnv("L2_RPC_URL") // Fetch L2 RPC url if defined
 	c.Testnet = c.L2RPCUrl != ""
 	c.PrivateKey = getEnv("PRIVATE_KEY")
@@ -105,11 +119,18 @@ func getEnv(v string) string {
 }
 
 // CreateKeys Creates node keys and defines chain and nodes for each node
-func (c *Common) CreateKeys(env *environment.Environment) ([]client.NodeKeysBundle, []*client.Plugin, error) {
-	PluginNodes, err := client.ConnectPluginNodes(env)
+func (c *Common) CreateKeys(env *environment.Environment) ([]client.NodeKeysBundle, []*client.PluginK8sClient, error) {
+	pluginK8Nodes, err := client.ConnectPluginNodes(env)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	// extract client from k8s client
+	PluginNodes := []*client.PluginClient{}
+	for i := range pluginK8Nodes {
+		PluginNodes = append(PluginNodes, pluginK8Nodes[i].PluginClient)
+	}
+
 	NKeys, _, err := client.CreateNodeKeysBundle(PluginNodes, c.ChainName, c.ChainId)
 	if err != nil {
 		return nil, nil, err
@@ -132,7 +153,7 @@ func (c *Common) CreateKeys(env *environment.Environment) ([]client.NodeKeysBund
 			return nil, nil, err
 		}
 	}
-	return NKeys, PluginNodes, nil
+	return NKeys, pluginK8Nodes, nil
 }
 
 // CreateJobsForContract Creates and sets up the boostrap jobs as well as OCR jobs
@@ -140,9 +161,9 @@ func (c *Common) CreateJobsForContract(cc *PluginClient, observationSource strin
 	// Define node[0] as bootstrap node
 	cc.bootstrapPeers = []client.P2PData{
 		{
-			RemoteIP:   cc.PluginNodes[0].RemoteIP(),
-			RemotePort: c.P2PPort,
-			PeerID:     cc.NKeys[0].PeerID,
+			InternalIP:   cc.PluginNodes[0].InternalIP(),
+			InternalPort: c.P2PPort,
+			PeerID:       cc.NKeys[0].PeerID,
 		},
 	}
 
@@ -222,7 +243,7 @@ func (c *Common) CreateJobsForContract(cc *PluginClient, observationSource strin
 
 func (c *Common) Default(t *testing.T) {
 	c.K8Config = &environment.Config{NamespacePrefix: "plugin-ocr-starknet", TTL: c.TTL, Test: t}
-	starknetUrl := fmt.Sprintf("http://%s:%d", serviceKeyL2, 5000)
+	starknetUrl := fmt.Sprintf("http://%s:%d/rpc", serviceKeyL2, 5000)
 	if c.Testnet {
 		starknetUrl = c.L2RPCUrl
 	}
@@ -247,10 +268,12 @@ ListenAddresses = ['0.0.0.0:6690']
 	c.ClConfig = map[string]interface{}{
 		"replicas": c.NodeCount,
 		"toml":     baseTOML,
+		"db": map[string]any{
+			"stateful": true,
+		},
 	}
 	c.Env = environment.New(c.K8Config).
 		AddHelm(devnet.New(nil)).
-		AddHelm(mockservercfg.New(nil)).
-		AddHelm(mockserver.New(nil)).
+		AddHelm(mock_adapter.New(nil)).
 		AddHelm(plugin.New(0, c.ClConfig))
 }

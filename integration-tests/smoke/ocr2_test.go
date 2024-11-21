@@ -1,17 +1,19 @@
 package smoke_test
 
-// revive:disable:dot-imports
 import (
 	"flag"
 	"fmt"
-	"github.com/goplugin/pluginv3.0/integration-tests/actions"
-	"go.uber.org/zap/zapcore"
 	"testing"
+
+	"go.uber.org/zap/zapcore"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/goplugin/plugin-starknet/integration-tests/common"
 	"github.com/goplugin/plugin-starknet/ops/gauntlet"
 	"github.com/goplugin/plugin-starknet/ops/utils"
-	"github.com/stretchr/testify/require"
+
+	"github.com/goplugin/pluginv3.0/integration-tests/actions"
 )
 
 var (
@@ -23,10 +25,9 @@ func init() {
 }
 
 var (
-	err           error
-	testState     *common.Test
-	decimals      = 9
-	mockServerVal = 900000000
+	err       error
+	testState *common.Test
+	decimals  = 9
 )
 
 func TestOCRBasic(t *testing.T) {
@@ -51,14 +52,13 @@ func TestOCRBasic(t *testing.T) {
 	if !testState.Common.Testnet {
 		testState.Devnet.AutoLoadState(testState.OCR2Client, testState.OCRAddr)
 	}
-	testState.SetUpNodes(mockServerVal)
+	testState.SetUpNodes()
 
 	err = testState.ValidateRounds(10, false)
 	require.NoError(t, err, "Validating round should not fail")
 
 	t.Cleanup(func() {
-		err = actions.TeardownSuite(t, testState.Common.Env, utils.ProjectRoot, testState.Cc.PluginNodes, nil, zapcore.ErrorLevel)
+		err = actions.TeardownSuite(t, testState.Common.Env, testState.Cc.PluginNodes, nil, zapcore.ErrorLevel)
 		require.NoError(t, err, "Error tearing down environment")
 	})
-
 }
