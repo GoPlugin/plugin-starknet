@@ -20,11 +20,13 @@ import (
 	"github.com/goplugin/plugin-common/pkg/logger"
 	"github.com/goplugin/plugin-common/pkg/loop"
 	adapters "github.com/goplugin/plugin-common/pkg/loop/adapters/starknet"
+	"github.com/goplugin/plugin-common/pkg/utils/tests"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/txm/mocks"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 )
 
 func TestIntegration_Txm(t *testing.T) {
+	ctx := tests.Context(t)
 	n := 2 // number of txs per key
 	// url := SetupLocalStarknetNode(t)
 	url := "http://127.0.0.1:5050"
@@ -100,7 +102,7 @@ func TestIntegration_Txm(t *testing.T) {
 		selector := starknetutils.GetSelectorFromNameFelt("totalSupply")
 
 		for i := 0; i < n; i++ {
-			require.NoError(t, txm.Enqueue(accountAddress, publicKey, starknetrpc.FunctionCall{
+			require.NoError(t, txm.Enqueue(ctx, accountAddress, publicKey, starknetrpc.FunctionCall{
 				ContractAddress:    contractAddress, // send to ETH token contract
 				EntryPointSelector: selector,
 			}))
