@@ -21,7 +21,7 @@ import (
 	mock_adapter "github.com/goplugin/plugin-testing-framework/lib/k8s/pkg/helm/mock-adapter"
 	"github.com/goplugin/pluginv3.0/integration-tests/client"
 	"github.com/goplugin/pluginv3.0/integration-tests/docker/test_env"
-	"github.com/goplugin/pluginv3.0/v2/core/services/job"
+	"github.com/goplugin/pluginv3.0/core/services/job"
 
 	chainconfig "github.com/goplugin/plugin-starknet/integration-tests/config"
 	"github.com/goplugin/plugin-starknet/integration-tests/testconfig"

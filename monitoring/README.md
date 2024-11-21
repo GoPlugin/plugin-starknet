@@ -3,7 +3,7 @@
 ## Useful links
 
 - Starknet on-chain monitor [generated docs](https://pkg.go.dev/github.com/goplugin/plugin-starknet/monitoring/pkg/monitoring).
-- On-chain monitoring (OM) framework architecture docs in [blueprints](https://github.com/goplugin/plugin-blueprints/blob/master/monitoring/README.md).
+- On-chain monitoring (OM) framework architecture docs in [blueprints](https://github.com/goplugin/pluginv3.0-blueprints/blob/master/monitoring/README.md).
 - OM framework [generated docs](https://pkg.go.dev/github.com/goplugin/plugin-common/pkg/monitoring).
 
 ## Local development

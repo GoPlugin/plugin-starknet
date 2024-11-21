@@ -325,26 +325,26 @@ func (m *OCRv2TestState) ValidateRounds(rounds int, isSoak bool) error {
 	if err != nil {
 		return err
 	}
-	resLINK, errLINK := m.Clients.StarknetClient.CallContract(ctx, starknet.CallOps{
+	resPLI, errPLI := m.Clients.StarknetClient.CallContract(ctx, starknet.CallOps{
 		ContractAddress: linkContractAddress,
 		Selector:        starknetutils.GetSelectorFromNameFelt("balance_of"),
 		Calldata:        []*felt.Felt{contractAddress},
 	})
-	require.NoError(m.TestConfig.T, errLINK, "Reader balance from PLI contract should not fail", "err", errLINK)
+	require.NoError(m.TestConfig.T, errPLI, "Reader balance from PLI contract should not fail", "err", errPLI)
 	resAgg, errAgg := m.Clients.StarknetClient.CallContract(ctx, starknet.CallOps{
 		ContractAddress: contractAddress,
 		Selector:        starknetutils.GetSelectorFromNameFelt("link_available_for_payment"),
 	})
 	require.NoError(m.TestConfig.T, errAgg, "link_available_for_payment should not fail", "err", errAgg)
-	balLINK := resLINK[0].BigInt(big.NewInt(0))
+	balPLI := resPLI[0].BigInt(big.NewInt(0))
 	balAgg := resAgg[1].BigInt(big.NewInt(0))
 	isNegative := resAgg[0].BigInt(big.NewInt(0))
 	if isNegative.Sign() > 0 {
 		balAgg = new(big.Int).Neg(balAgg)
 	}
 
-	assert.Equal(m.TestConfig.T, balLINK.Cmp(big.NewInt(0)), 1, "Aggregator should have non-zero balance")
-	assert.GreaterOrEqual(m.TestConfig.T, balLINK.Cmp(balAgg), 0, "Aggregator payment balance should be <= actual PLI balance")
+	assert.Equal(m.TestConfig.T, balPLI.Cmp(big.NewInt(0)), 1, "Aggregator should have non-zero balance")
+	assert.GreaterOrEqual(m.TestConfig.T, balPLI.Cmp(balAgg), 0, "Aggregator payment balance should be <= actual PLI balance")
 
 	for start := time.Now(); time.Since(start) < m.Common.TestEnvDetails.TestDuration; {
 		m.TestConfig.L.Info().Msg(fmt.Sprintf("Elapsed time: %s, Round wait: %s ", time.Since(start), m.Common.TestEnvDetails.TestDuration))

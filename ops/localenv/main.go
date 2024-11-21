@@ -34,7 +34,7 @@ func main() {
 	// 	run("switch k8s context", "kubectl", "config", "use-context", "k3d-local")
 	// build and upload image to local registry
 	case "build":
-		context := "../../../plugin" // TODO: make this an arg
+		context := "../../../pluginv3.0" // TODO: make this an arg
 		run("build image", "docker", "build", "-f", context+"/core/plugin.Dockerfile", context, "-t", "plugin:local")
 		run("tag image", "docker", "tag", "plugin:local", "localhost:12345/plugin:local")
 		run("push image", "docker", "push", "localhost:12345/plugin:local")

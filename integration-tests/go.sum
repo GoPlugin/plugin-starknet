@@ -1390,8 +1390,8 @@ github.com/goplugin/plugin-testing-framework/wasp v1.50.0 h1:gfhfTn7HkbUHNooSF3c
 github.com/goplugin/plugin-testing-framework/wasp v1.50.0/go.mod h1:tqajhpUJA/9OaMCLitghBXjAgqYO4i27St0F4TUO3+M=
 github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20241012135014-37f3132362ec h1:S9WyGN0+m3umge1rGgZJI+ljozc/COZt9nSNA3tqA1s=
 github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20241012135014-37f3132362ec/go.mod h1:kMiICu9TUtelsGy44wkwnKbFRINnsBBoAMXotfNm78Q=
-github.com/goplugin/pluginv3.0/v2 v2.14.0-mercury-20240807.0.20241012135014-37f3132362ec h1:CxaKhs+aBGE/shiox4nv59Oneh2B9jJv3NEtA2Q15CM=
-github.com/goplugin/pluginv3.0/v2 v2.14.0-mercury-20240807.0.20241012135014-37f3132362ec/go.mod h1:KbO2His3P8Lg9qcikZeZ1KdYCutV6tkoyT/sJw92bjE=
+github.com/goplugin/pluginv3.0 v2.14.0-mercury-20240807.0.20241012135014-37f3132362ec h1:CxaKhs+aBGE/shiox4nv59Oneh2B9jJv3NEtA2Q15CM=
+github.com/goplugin/pluginv3.0 v2.14.0-mercury-20240807.0.20241012135014-37f3132362ec/go.mod h1:KbO2His3P8Lg9qcikZeZ1KdYCutV6tkoyT/sJw92bjE=
 github.com/goplugin/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7 h1:12ijqMM9tvYVEm+nR826WsrNi6zCKpwBhuApq127wHs=
 github.com/goplugin/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7/go.mod h1:FX7/bVdoep147QQhsOPkYsPEXhGZjeYx6lBSaSXtZOA=
 github.com/goplugin/plugin-libocr v0.0.0-20241007185508-adbe57025f12 h1:NzZGjaqez21I3DU7objl3xExTH4fxYvzTqar8DC6360=
