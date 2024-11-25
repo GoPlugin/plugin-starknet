@@ -6,9 +6,12 @@ require (
 	github.com/dontpanicdao/caigo v0.4.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/rs/zerolog v1.29.1
-	github.com/goplugin/plugin-env v0.3.29
-	github.com/goplugin/plugin-starknet/relayer v0.0.0-20221102160912-61646f534e3a
-	github.com/goplugin/plugin-testing-framework v1.11.5
+	github.com/goplugin/plugin-env v0.0.1
+	github.com/goplugin/plugin-starknet/relayer v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-testing-framework v0.0.1 //plugin update changes
+	//github.com/goplugin/plugin-env v0.0.1
+	//github.com/goplugin/plugin-starknet/relayer v0.0.0-20221102160912-61646f534e3a
+	//github.com/goplugin/plugin-testing-framework v1.11.5
 )
 
 require (
@@ -89,7 +92,8 @@ require (
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/goplugin/plugin-relay v0.1.7-0.20230422214339-5fee8d7f3f82 // indirect
-	github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc // indirect
+	github.com/goplugin/plugin-libocr v0.1.1-beta //plugin update changes
+	//github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc // indirect
 	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect

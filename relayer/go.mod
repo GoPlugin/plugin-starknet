@@ -8,7 +8,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/smartcontractkit/caigo v0.0.0-20230508053235-41120ca1f9f3
 	github.com/goplugin/plugin-relay v0.1.7-0.20230422214339-5fee8d7f3f82
-	github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc
+	github.com/goplugin/plugin-libocr v0.1.1-beta //plugin update changes
+	//github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
 )

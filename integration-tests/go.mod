@@ -6,12 +6,18 @@ require (
 	github.com/dontpanicdao/caigo v0.4.0
 	github.com/rs/zerolog v1.29.1
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
-	github.com/goplugin/plugin-env v0.3.29
-	github.com/goplugin/plugin-starknet/ops v0.0.0-20230329050701-40e3b18bb026
-	github.com/goplugin/plugin-starknet/relayer v0.0.0-20230424184429-bfdf6bddb239
-	github.com/goplugin/plugin-testing-framework v1.11.5
-	github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20230420131147-ce3c53a39d07
-	github.com/goplugin/pluginv3.0/v2 v2.1.0-beta0.0.20230427051455-edb338fd2536
+	github.com/goplugin/plugin-env v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-starknet/ops v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-starknet/relayer v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-testing-framework v0.0.1 //plugin update changes
+	github.com/goplugin/pluginv3.0/integration-tests v2.1.0 //plugin update changes
+	//github.com/goplugin/plugin-env v0.0.1
+	//github.com/goplugin/plugin-starknet/ops v0.0.0-20230329050701-40e3b18bb026
+	//github.com/goplugin/plugin-starknet/relayer v0.0.0-20230424184429-bfdf6bddb239
+	//github.com/goplugin/plugin-testing-framework v1.11.5
+	//github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20230420131147-ce3c53a39d07
+	github.com/goplugin/pluginv3.0/v2 v2.1.0
+	//github.com/goplugin/pluginv3.0/v2 v2.1.0-beta0.0.20230427051455-edb338fd2536
 )
 
 require (
@@ -265,11 +271,12 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/slack-go/slack v0.12.2 // indirect
 	github.com/goplugin/plugin-relay v0.1.7-0.20230424181359-6cb4dc745ec7
-	github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc // indirect
+	github.com/goplugin/plugin-libocr v0.1.1-beta //plugin update changes
+	//github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc // indirect
 	github.com/smartcontractkit/ocr2keepers v0.6.14 // indirect
 	github.com/smartcontractkit/ocr2vrf v0.0.0-20230425184732-a793ac75f0a3 // indirect
 	github.com/smartcontractkit/sqlx v1.3.5-0.20210805004948-4be295aacbeb // indirect
-	github.com/goplugin/wsrpc v0.6.2-0.20230317160629-382a1ac921d8 // indirect
+	github.com/goplugin/wsrpc v0.1.1 //plugin update changes
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect

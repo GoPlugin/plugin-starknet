@@ -7,8 +7,10 @@ require (
 	github.com/dontpanicdao/caigo v0.4.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/goplugin/plugin-relay v0.1.7-0.20230422214339-5fee8d7f3f82
-	github.com/goplugin/plugin-starknet/relayer v0.0.0-20230412143414-b1e534d34592
-	github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc
+	github.com/goplugin/plugin-starknet/relayer v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-libocr v0.0.1-beta //plugin update changes
+	//github.com/goplugin/plugin-starknet/relayer v0.0.0-20230412143414-b1e534d34592
+	//github.com/goplugin/plugin-libocr v0.0.0-20230413082317-9561d14087cc
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/multierr v1.9.0
 )
