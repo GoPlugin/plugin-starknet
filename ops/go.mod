@@ -4,8 +4,10 @@ go 1.22.5
 
 require (
 	github.com/rs/zerolog v1.30.0
-	github.com/goplugin/plugin-env v0.3.29
-	github.com/goplugin/plugin-testing-framework/lib v1.50.5
+	github.com/goplugin/plugin-env v0.0.1
+	//github.com/goplugin/plugin-env v0.3.29
+	github.com/goplugin/plugin-testing-framework/lib v0.2.1 //plugin update changes
+	//github.com/goplugin/plugin-testing-framework/lib v1.50.5
 )
 
 require (
