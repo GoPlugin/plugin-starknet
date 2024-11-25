@@ -1,6 +1,6 @@
 import { CompiledContract, json } from 'starknet'
 import fs from 'fs'
-import { logger, prompt } from '@pluginv3.0/gauntlet-core/dist/utils'
+import { logger, prompt } from '@plugin/gauntlet-core/dist/utils'
 
 export const loadContract = (name: string): CompiledContract => {
   return json.parse(

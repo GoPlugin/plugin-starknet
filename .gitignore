@@ -1,5 +1,7 @@
+.snfoundry_cache
 .direnv
 artifacts/
+vendor/
 accounts.json
 node.json
 package-lock.json
@@ -13,8 +15,6 @@ bin
 
 .DS_Store
 .temp/
-coverage/
-coverage.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -59,11 +59,13 @@ pip-delete-this-directory.txt
 htmlcov/
 .tox/
 .nox/
-.coverage
-.coverage.*
+*report.xml
+*report.json
+*.out
+*coverage*
+testdata/
 .cache
 nosetests.xml
-coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
@@ -162,3 +164,7 @@ integration-tests/smoke/logs
 integration-tests/soak/logs
 remote.test
 ztarrepo.tar.gz
+eslint-report.json
+.run.id
+.local-mock-server
+override*.toml

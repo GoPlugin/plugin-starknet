@@ -2,9 +2,9 @@
 
 This packages expose the commands to be used as a CLI of the following packages:
 
-- @pluginv3.0/starknet-gauntlet-example
-- @pluginv3.0/starknet-gauntlet-account
-- @pluginv3.0/starknet-gauntlet-ocr2
+- @plugin/starknet-gauntlet-example
+- @plugin/starknet-gauntlet-account
+- @plugin/starknet-gauntlet-ocr2
 
 ## Setup
 

@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-cli",
+  "name": "@plugin/starknet-gauntlet-cli",
   "version": "0.0.1",
   "description": "Starknet Gauntlet CLI",
   "keywords": [
@@ -25,14 +25,14 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet-oz": "*",
-    "@pluginv3.0/starknet-gauntlet-argent": "*",
-    "@pluginv3.0/starknet-gauntlet-example": "*",
-    "@pluginv3.0/starknet-gauntlet-ocr2": "*",
-    "@pluginv3.0/starknet-gauntlet-token": "*",
-    "@pluginv3.0/starknet-gauntlet-multisig": "*",
-    "@pluginv3.0/starknet-gauntlet-emergency-protocol": "*",
-    "@pluginv3.0/starknet-gauntlet-ledger": "*"
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet-oz": "*",
+    "@plugin/starknet-gauntlet-argent": "*",
+    "@plugin/starknet-gauntlet-example": "*",
+    "@plugin/starknet-gauntlet-ocr2": "*",
+    "@plugin/starknet-gauntlet-token": "*",
+    "@plugin/starknet-gauntlet-multisig": "*",
+    "@plugin/starknet-gauntlet-emergency-protocol": "*",
+    "@plugin/starknet-gauntlet-ledger": "*"
   }
 }

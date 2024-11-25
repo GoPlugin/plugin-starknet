@@ -3,8 +3,8 @@ import {
   makeExecuteCommand,
   BeforeExecute,
   AfterExecute,
-} from '@pluginv3.0/starknet-gauntlet'
-import { DeployExampleBaseConfig, DeployExampleInput } from '@pluginv3.0/gauntlet-contracts-example'
+} from '@plugin/starknet-gauntlet'
+import { DeployExampleBaseConfig, DeployExampleInput } from '@plugin/gauntlet-contracts-example'
 import { tokenContractLoader } from '../../lib/contracts'
 
 type ContractInput = {}

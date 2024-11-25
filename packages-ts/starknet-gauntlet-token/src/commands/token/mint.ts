@@ -3,7 +3,7 @@ import {
   ExecuteCommandConfig,
   makeExecuteCommand,
   isValidAddress,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { uint256 } from 'starknet'
 import { CATEGORIES } from '../../lib/categories'
 import { tokenContractLoader, CONTRACT_LIST } from '../../lib/contracts'
@@ -59,7 +59,7 @@ const commandConfig: ExecuteCommandConfig<UserInput, ContractInput> = {
       `${CATEGORIES.TOKEN}:mint --network=<NETWORK> --recipient=<ACCOUNT> --amount=<AMOUNT> <CONTRACT_ADDRESS>`,
     ],
   },
-  internalFunction: 'permissionedMint',
+  internalFunction: 'permissioned_mint',
   makeUserInput,
   makeContractInput,
   validations: [validateRecipient, validateAmount],

@@ -3,7 +3,7 @@ import {
   ExecuteCommandConfig,
   ExecutionContext,
   makeExecuteCommand,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { CATEGORIES } from '../../lib/categories'
 import { contractLoader } from '../../lib/contracts'
 import { validateSigners } from './deploy'

@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/NethermindEth/juno/pkg/crypto/pedersen"
+	"github.com/NethermindEth/starknet.go/curve"
 
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
 
@@ -35,7 +35,7 @@ func NewOffchainConfigDigester(chainID, contract string) offchainConfigDigester 
 func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.ConfigDigest, error) {
 	configDigest := types.ConfigDigest{}
 
-	contract_address, valid := new(big.Int).SetString(strings.TrimPrefix(d.contract, "0x"), 16)
+	contractAddress, valid := new(big.Int).SetString(strings.TrimPrefix(d.contract, "0x"), 16)
 	if !valid {
 		return configDigest, errors.New("invalid contract address")
 	}
@@ -72,7 +72,7 @@ func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.Co
 	// golang... https://stackoverflow.com/questions/28625546/mixing-exploded-slices-and-regular-parameters-in-variadic-functions
 	msg := []*big.Int{
 		new(big.Int).SetBytes([]byte(d.chainID)),       // chain_id
-		contract_address,                               // contract_address
+		contractAddress,                                // contract_address
 		new(big.Int).SetUint64(cfg.ConfigCount),        // config_count
 		new(big.Int).SetInt64(int64(len(cfg.Signers))), // oracles_len
 	}
@@ -90,15 +90,22 @@ func (d offchainConfigDigester) ConfigDigest(cfg types.ContractConfig) (types.Co
 	)
 	msg = append(msg, offchainConfig...) // offchain_config
 
-	digest := pedersen.ArrayDigest(msg...)
+	digest, err := curve.Curve.ComputeHashOnElements(msg)
+	if err != nil {
+		return configDigest, err
+	}
 	digest.FillBytes(configDigest[:])
 
 	// set first two bytes to the digest prefix
-	binary.BigEndian.PutUint16(configDigest[:2], uint16(d.ConfigDigestPrefix()))
+	pre, err := d.ConfigDigestPrefix()
+	if err != nil {
+		return configDigest, err
+	}
+	binary.BigEndian.PutUint16(configDigest[:2], uint16(pre))
 
 	return configDigest, nil
 }
 
-func (offchainConfigDigester) ConfigDigestPrefix() types.ConfigDigestPrefix {
-	return ConfigDigestPrefixStarknet
+func (offchainConfigDigester) ConfigDigestPrefix() (types.ConfigDigestPrefix, error) {
+	return ConfigDigestPrefixStarknet, nil
 }

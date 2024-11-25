@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-multisig",
+  "name": "@plugin/starknet-gauntlet-multisig",
   "version": "0.0.1",
   "description": "Starknet Gauntlet Multisig",
   "keywords": [
@@ -25,8 +25,7 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "starsign-multisig": "0.3.0",
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet": "*"
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet": "*"
   }
 }

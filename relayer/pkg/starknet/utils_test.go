@@ -16,7 +16,6 @@ var (
 
 func TestPadBytes(t *testing.T) {
 	for i, v := range lengths {
-
 		// generate random
 		in := make([]byte, v)
 		_, err := rand.Read(in)
@@ -36,16 +35,6 @@ func TestPadBytes(t *testing.T) {
 		}
 		assert.Equal(t, in, out[start:])
 	}
-}
-
-func TestHexToSignedBig(t *testing.T) {
-	// Positive value (99)
-	answer := HexToSignedBig("0x63")
-	assert.Equal(t, big.NewInt(99), answer)
-
-	// Negative value (-10)
-	answer = HexToSignedBig("0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffff7")
-	assert.Equal(t, big.NewInt(-10), answer)
 }
 
 func TestDecodeFeltFails(t *testing.T) {

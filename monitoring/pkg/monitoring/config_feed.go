@@ -6,7 +6,7 @@ import (
 	"io"
 	"math/big"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 )
 
 type StarknetFeedConfig struct {

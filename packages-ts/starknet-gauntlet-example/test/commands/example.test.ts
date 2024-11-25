@@ -1,5 +1,4 @@
-import { BN } from '@pluginv3.0/gauntlet-core/dist/utils'
-import { makeProvider } from '@pluginv3.0/starknet-gauntlet'
+import { makeProvider } from '@plugin/starknet-gauntlet'
 import { Contract } from 'starknet'
 import deployCommand from '../../src/commands/example/deploy'
 import increaseBalanceCommand from '../../src/commands/example/increaseBalance'
@@ -9,9 +8,7 @@ import {
   registerExecuteCommand,
   TIMEOUT,
   registerInspectCommand,
-  startNetwork,
-  IntegratedDevnet,
-} from '@pluginv3.0/starknet-gauntlet/test/utils'
+} from '@plugin/starknet-gauntlet/test/utils'
 import { loadExampleContract } from '../utils'
 
 const getBalance = async (address: string) => {
@@ -22,16 +19,11 @@ const getBalance = async (address: string) => {
   )
   const balance = await contract.get_balance()
 
-  return new BN(balance.res).toString()
+  return BigInt(balance.res).toString()
 }
 
 describe('Example Contract', () => {
-  let network: IntegratedDevnet
   let contractAddress: string
-
-  beforeAll(async () => {
-    network = await startNetwork()
-  }, TIMEOUT)
 
   it(
     'Deployment with default input',
@@ -95,8 +87,4 @@ describe('Example Contract', () => {
   }, 3000)
 
   // TODO: Include tests with account contract. Pending on devnet to support predeployed accounts and fee token
-
-  afterAll(() => {
-    network.stop()
-  })
 })

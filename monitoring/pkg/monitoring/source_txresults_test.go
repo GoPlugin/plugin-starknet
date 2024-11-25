@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 	ocr2Mocks "github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2/mocks"
@@ -19,16 +21,19 @@ func TestTxResultsSource(t *testing.T) {
 	chainConfig := generateChainConfig()
 	feedConfig := generateFeedConfig()
 
+	feedContractAddressFelt, err := starknetutils.HexToFelt(feedConfig.ContractAddress)
+	require.NoError(t, err)
+
 	ocr2Reader := ocr2Mocks.NewOCR2Reader(t)
 	ocr2Reader.On(
 		"LatestRoundData",
 		mock.Anything, // ctx
-		feedConfig.ContractAddress,
+		feedContractAddressFelt,
 	).Return(ocr2ClientLatestRoundDataResponseForTxResults1, nil).Once()
 	ocr2Reader.On(
 		"LatestRoundData",
 		mock.Anything, // ctx
-		feedConfig.ContractAddress,
+		feedContractAddressFelt,
 	).Return(ocr2ClientLatestRoundDataResponseForTxResults2, nil).Once()
 
 	factory := NewTxResultsSourceFactory(ocr2Reader)

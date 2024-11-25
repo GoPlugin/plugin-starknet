@@ -2,17 +2,17 @@ package txm
 
 import (
 	"bytes"
-	"math/big"
 	"net/http"
 	"os/exec"
 	"testing"
 	"time"
 
-	caigotypes "github.com/smartcontractkit/caigo/types"
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/goplugin/plugin-relay/pkg/utils"
+	"github.com/goplugin/plugin-common/pkg/utils"
+	"github.com/goplugin/plugin-common/pkg/utils/tests"
 )
 
 var (
@@ -29,21 +29,16 @@ var (
 		"0xb4862b21fb97d43588561712e8e5216a",
 		"0x259f4329e6f4590b9a164106cf6a659e",
 	}
-
-	// devnet key derivation
-	// https://github.com/Shard-Labs/starknet-devnet/blob/master/starknet_devnet/account.py
-	DevnetClassHash, _ = new(big.Int).SetString("1803505466663265559571280894381905521939782500874858933595227108099796801620", 10)
-	DevnetSalt         = big.NewInt(20)
 )
 
 // SetupLocalStarknetNode sets up a local starknet node via cli, and returns the url
 func SetupLocalStarknetNode(t *testing.T) string {
+	ctx := tests.Context(t)
 	port := utils.MustRandomPort(t)
 	url := "http://127.0.0.1:" + port
 	cmd := exec.Command("starknet-devnet",
 		"--seed", "0", // use same seed for testing
 		"--port", port,
-		"--lite-mode",
 	)
 	var stdErr bytes.Buffer
 	cmd.Stderr = &stdErr
@@ -62,7 +57,11 @@ func SetupLocalStarknetNode(t *testing.T) string {
 	var ready bool
 	for i := 0; i < 30; i++ {
 		time.Sleep(time.Second)
-		res, err := http.Get(url + "/is_alive")
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url+"/is_alive", nil)
+		if err != nil {
+			t.Fatalf("failed to create request: %v", err)
+		}
+		res, err := http.DefaultClient.Do(req)
 		if err != nil || res.StatusCode != 200 {
 			t.Logf("API server not ready yet (attempt %d)\n", i+1)
 			continue
@@ -82,9 +81,9 @@ func TestKeys(t *testing.T, count int) (rawkeys [][]byte) {
 		if i >= count {
 			break
 		}
-
-		keyBytes := caigotypes.HexToHash(k).Bytes()
-		rawkeys = append(rawkeys, keyBytes)
+		f, _ := starknetutils.HexToFelt(k)
+		keyBytes := f.Bytes()
+		rawkeys = append(rawkeys, keyBytes[:])
 	}
 	return rawkeys
 }

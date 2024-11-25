@@ -1,3 +1,7 @@
 export * from './command'
 export * from './executeCommand'
 export * from './inspectionCommand'
+export * from './upgradeCommandConfig'
+export * from './declareCommandConfig'
+export * from './acceptOwnershipCommandConfig'
+export * from './transferOwnershipCommandConfig'

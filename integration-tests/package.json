@@ -1,5 +1,5 @@
 {
-    "name": "@pluginv3.0/starknet-integration-tests",
+    "name": "@plugin/starknet-integration-tests",
     "version": "0.0.1",
     "license": "MIT",
     "dependencies": {},

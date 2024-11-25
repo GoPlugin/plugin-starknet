@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-example",
+  "name": "@plugin/starknet-gauntlet-example",
   "version": "0.0.1",
   "description": "Starknet Gauntlet Example",
   "keywords": [
@@ -25,8 +25,8 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0/gauntlet-contracts-example": "0.1.1",
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet": "*"
+    "@plugin/gauntlet-contracts-example": "0.1.1",
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet": "*"
   }
 }

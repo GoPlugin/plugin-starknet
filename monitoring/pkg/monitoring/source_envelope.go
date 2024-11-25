@@ -2,16 +2,18 @@ package monitoring
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
 
-	junotypes "github.com/NethermindEth/juno/pkg/types"
-	"github.com/dontpanicdao/caigo"
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
-	relayUtils "github.com/goplugin/plugin-relay/pkg/utils"
+	"github.com/NethermindEth/juno/core/felt"
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/types"
 	"go.uber.org/multierr"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
+	relayUtils "github.com/goplugin/plugin-common/pkg/utils"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
@@ -37,9 +39,17 @@ func (s *envelopeSourceFactory) NewSource(
 	if !ok {
 		return nil, fmt.Errorf("expected feedConfig to be of type StarknetFeedConfig not %T", feedConfig)
 	}
+	contractAddress, err := starknetutils.HexToFelt(feedConfig.GetContractAddress())
+	if err != nil {
+		return nil, err
+	}
+	linkTokenAddress, err := starknetutils.HexToFelt(starknetChainConfig.GetLinkTokenAddress())
+	if err != nil {
+		return nil, err
+	}
 	return &envelopeSource{
-		feedConfig.GetContractAddress(),
-		starknetChainConfig.GetLinkTokenAddress(),
+		contractAddress,
+		linkTokenAddress,
 		s.ocr2Reader,
 	}, nil
 }
@@ -49,8 +59,8 @@ func (s *envelopeSourceFactory) GetType() string {
 }
 
 type envelopeSource struct {
-	contractAddress  string
-	linkTokenAddress string
+	contractAddress  *felt.Felt
+	linkTokenAddress *felt.Felt
 	ocr2Reader       ocr2.OCR2Reader
 }
 
@@ -65,13 +75,11 @@ func (s *envelopeSource) Fetch(ctx context.Context) (interface{}, error) {
 		envelopeMu.Lock()
 		defer envelopeMu.Unlock()
 		if err != nil {
-			envelopeErr = multierr.Combine(envelopeErr, fmt.Errorf("fetchLatestNewTransmissionEvent failed: %w", err))
+			envelopeErr = errors.Join(envelopeErr, fmt.Errorf("fetchLatestNewTransmissionEvent failed: %w", err))
 			return
 		}
 		envelope.BlockNumber = latestRoundData.BlockNumber
-		if newTransmissionEvent.Transmitter != nil {
-			envelope.Transmitter = types.Account(newTransmissionEvent.Transmitter.String())
-		}
+		envelope.Transmitter = types.Account(newTransmissionEvent.Transmitter.String())
 		envelope.AggregatorRoundID = latestRoundData.RoundID
 		envelope.ConfigDigest = newTransmissionEvent.ConfigDigest
 		envelope.Epoch = newTransmissionEvent.Epoch
@@ -118,7 +126,7 @@ func (s *envelopeSource) Fetch(ctx context.Context) (interface{}, error) {
 	return envelope, envelopeErr
 }
 
-func (s *envelopeSource) fetchLatestNewTransmissionEvent(ctx context.Context, contractAddress string) (
+func (s *envelopeSource) fetchLatestNewTransmissionEvent(ctx context.Context, contractAddress *felt.Felt) (
 	latestRound ocr2.RoundData,
 	transmission ocr2.NewTransmissionEvent,
 	err error,
@@ -144,7 +152,7 @@ func (s *envelopeSource) fetchLatestNewTransmissionEvent(ctx context.Context, co
 	return latestRound, transmission, fmt.Errorf("no new_trasmission event found to correspond with the round id %d in block %d", latestRound.RoundID, latestRound.BlockNumber)
 }
 
-func (s *envelopeSource) fetchContractConfig(ctx context.Context, contractAddress string) (config ocr2.ContractConfig, err error) {
+func (s *envelopeSource) fetchContractConfig(ctx context.Context, contractAddress *felt.Felt) (config ocr2.ContractConfig, err error) {
 	configDetails, err := s.ocr2Reader.LatestConfigDetails(ctx, contractAddress)
 	if err != nil {
 		return config, fmt.Errorf("couldn't fetch latest config details for contract '%s': %w", contractAddress, err)
@@ -158,23 +166,18 @@ func (s *envelopeSource) fetchContractConfig(ctx context.Context, contractAddres
 
 var zeroBigInt = big.NewInt(0)
 
-func (s *envelopeSource) fetchLinkBalance(ctx context.Context, linkTokenAddress, contractAddress string) (*big.Int, error) {
+func (s *envelopeSource) fetchLinkBalance(ctx context.Context, linkTokenAddress, contractAddress *felt.Felt) (*big.Int, error) {
 	results, err := s.ocr2Reader.BaseReader().CallContract(ctx, starknet.CallOps{
 		ContractAddress: linkTokenAddress,
-		Selector:        "balanceOf",
-		Calldata: []string{
-			caigo.HexToBN(contractAddress).String(),
-		},
+		Selector:        starknetutils.GetSelectorFromNameFelt("balance_of"),
+		Calldata:        []*felt.Felt{contractAddress},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed call to ECR20 contract, balanceOf method: %w", err)
+		return nil, fmt.Errorf("failed call to ECR20 contract, balance_of method: %w", err)
 	}
 	if len(results) < 1 {
-		return nil, fmt.Errorf("insufficient data from balanceOf '%v': %w", results, err)
+		return nil, fmt.Errorf("insufficient data from balance_of '%v': %w", results, err)
 	}
-	linkBalance := junotypes.HexToFelt(results[0]).Big()
-	if linkBalance.Cmp(zeroBigInt) == 0 {
-		return nil, fmt.Errorf("contract's PLI balance should not be zero")
-	}
+	linkBalance := results[0].BigInt(big.NewInt(0))
 	return linkBalance, nil
 }

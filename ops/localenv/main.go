@@ -12,7 +12,7 @@ import (
 	"github.com/goplugin/plugin-starknet/ops/utils"
 )
 
-// TODO: consider extracting entire file to `plugin-relay/ops` or into a separate CLI tool
+// TODO: consider extracting entire file to `plugin-common/ops` or into a separate CLI tool
 // this simply runs underlying functions but does not import them
 
 // PODMAN:
@@ -28,10 +28,10 @@ func main() {
 
 	switch strings.ToLower(os.Args[1]) {
 	// create k8s cluster + resources
-	case "create":
-		run("create registry", "k3d", "registry", "create", "registry.localhost", "--port", "127.0.0.1:12345")
-		run("create k8s cluster", "k3d", "cluster", "create", "local", "--api-port", "127.0.0.1:12346", "--registry-use", "k3d-registry.localhost:12345")
-		run("switch k8s context", "kubectl", "config", "use-context", "k3d-local")
+	// case "create":
+	// 	run("create registry", "k3d", "registry", "create", "registry.localhost", "--port", "127.0.0.1:12345", "--default-network", "plugin")
+	// 	run("create k8s cluster", "k3d", "cluster", "create", "local", "--api-port", "127.0.0.1:12346", "--registry-use", "k3d-registry.localhost:12345")
+	// 	run("switch k8s context", "kubectl", "config", "use-context", "k3d-local")
 	// build and upload image to local registry
 	case "build":
 		context := "../../../plugin" // TODO: make this an arg
@@ -44,22 +44,23 @@ func main() {
 		if err := os.Chdir(utils.IntegrationTestsRoot); err != nil {
 			panic(err)
 		}
+		setEnvIfNotExists("PLUGIN_ENV_USER", "localenv")
 		setEnvIfNotExists("PLUGIN_IMAGE", "k3d-registry.localhost:12345/plugin")
 		setEnvIfNotExists("PLUGIN_VERSION", "local")
 		setEnvIfNotExists("KEEP_ENVIRONMENTS", "ALWAYS")
-		setEnvIfNotExists("NODE_COUNT", "1")
+		setEnvIfNotExists("NODE_COUNT", "4")
 		setEnvIfNotExists("TTL", "900h")
 		run("start environment", "go", "test", "-count", "1", "-v", "-timeout", "30m", "--run", "^TestOCRBasic$", "./smoke")
 	// stop k8s namespace from environment
-	case "stop":
-		if len(os.Args) < 3 {
-			panic("missing namespace argument")
-		}
-		run("stopping environment", "kubectl", "delete", "namespaces", os.Args[2])
+	// case "stop":
+	// 	if len(os.Args) < 3 {
+	// 		panic("missing namespace argument")
+	// 	}
+	// 	run("stopping environment", "kubectl", "delete", "namespaces", os.Args[2])
 	// delete removes the k8s cluster
-	case "delete":
-		run("remove k8s cluster", "k3d", "cluster", "delete", "local")
-		run("remove registry", "k3d", "registry", "delete", "k3d-registry.localhost")
+	// case "delete":
+	// 	run("remove k8s cluster", "k3d", "cluster", "delete", "local")
+	// 	run("remove registry", "k3d", "registry", "delete", "k3d-registry.localhost")
 	default:
 		panic("unrecognized command")
 	}

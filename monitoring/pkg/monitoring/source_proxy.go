@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	"github.com/NethermindEth/juno/core/felt"
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 )
@@ -30,8 +33,16 @@ func (s *proxySourceFactory) NewSource(
 	_ relayMonitoring.ChainConfig,
 	feedConfig relayMonitoring.FeedConfig,
 ) (relayMonitoring.Source, error) {
+	starknetFeedConfig, ok := feedConfig.(StarknetFeedConfig)
+	if !ok {
+		return nil, fmt.Errorf("expected feedConfig to be of type StarknetFeedConfig not %T", feedConfig)
+	}
+	contractAddress, err := starknetutils.HexToFelt(starknetFeedConfig.ProxyAddress)
+	if err != nil {
+		return nil, err
+	}
 	return &proxySource{
-		feedConfig.GetContractAddress(),
+		contractAddress,
 		s.ocr2Reader,
 	}, nil
 }
@@ -41,16 +52,16 @@ func (s *proxySourceFactory) GetType() string {
 }
 
 type proxySource struct {
-	contractAddress string
+	contractAddress *felt.Felt
 	ocr2Reader      ocr2.OCR2Reader
 }
 
 func (s *proxySource) Fetch(ctx context.Context) (interface{}, error) {
-	latestTransmission, err := s.ocr2Reader.LatestTransmissionDetails(ctx, s.contractAddress)
+	latestRoundData, err := s.ocr2Reader.LatestRoundData(ctx, s.contractAddress)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't fetch latest_transmission_details: %w", err)
+		return nil, fmt.Errorf("couldn't fetch latest_round_data: %w", err)
 	}
 	return ProxyData{
-		Answer: latestTransmission.LatestAnswer,
+		Answer: latestRoundData.Answer,
 	}, nil
 }

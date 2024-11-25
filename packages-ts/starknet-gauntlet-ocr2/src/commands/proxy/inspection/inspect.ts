@@ -2,7 +2,7 @@ import {
   InspectCommandConfig,
   IStarknetProvider,
   makeInspectionCommand,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { validateAndParseAddress, shortString } from 'starknet'
 import { CATEGORIES } from '../../../lib/categories'
 import { ocr2ProxyLoader } from '../../../lib/contracts'

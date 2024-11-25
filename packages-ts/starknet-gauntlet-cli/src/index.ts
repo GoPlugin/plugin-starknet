@@ -1,32 +1,32 @@
 import {
   executeCommands as OCR2ExecuteCommands,
   inspectionCommands as OCR2InspectionCommands,
-} from '@pluginv3.0/starknet-gauntlet-ocr2'
+} from '@plugin/starknet-gauntlet-ocr2'
 import {
   executeCommands as ExampleExecuteCommands,
   inspectionCommands as ExampleInspectionsCommands,
-} from '@pluginv3.0/starknet-gauntlet-example'
-import { Commands as OZCommands } from '@pluginv3.0/starknet-gauntlet-oz'
+} from '@plugin/starknet-gauntlet-example'
+import { Commands as OZCommands } from '@plugin/starknet-gauntlet-oz'
 import {
   L2Commands as L2StarkgateCommands,
   InspectionCommands as StarkgateInspectionCommands,
-} from '@pluginv3.0/starknet-gauntlet-token'
-import { Commands as ArgentCommands } from '@pluginv3.0/starknet-gauntlet-argent'
+} from '@plugin/starknet-gauntlet-token'
+import { Commands as ArgentCommands } from '@plugin/starknet-gauntlet-argent'
 import {
   L1Commands as L1EmergencyProtocolCommands,
   L2Commands as L2EmergencyProtocolCommands,
   L2InspectionCommands as L2EmergencyProtocolInspectionCommands,
-} from '@pluginv3.0/starknet-gauntlet-emergency-protocol'
+} from '@plugin/starknet-gauntlet-emergency-protocol'
 import {
   executeCommands as MultisigExecuteCommands,
   inspectionCommands as MultisigInspectionCommands,
   wrapCommand as multisigWrapCommand,
-} from '@pluginv3.0/starknet-gauntlet-multisig'
+} from '@plugin/starknet-gauntlet-multisig'
 
-import { executeCLI } from '@pluginv3.0/gauntlet-core'
+import { executeCLI } from '@plugin/gauntlet-core'
 import { existsSync } from 'fs'
 import path from 'path'
-import { io, logger, prompt } from '@pluginv3.0/gauntlet-core/dist/utils'
+import { io, logger, prompt } from '@plugin/gauntlet-core/dist/utils'
 import {
   CommandCtor,
   Dependencies,
@@ -35,15 +35,15 @@ import {
   InspectCommandInstance,
   makeProvider,
   makeWallet as makeDefaultWallet,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import {
   EVMExecuteCommandInstance,
   CommandCtor as EVMCommandCtor,
   makeWallet as EVMMakeWallet,
   makeProvider as EVMMakeProvider,
   EVMDependencies,
-} from '@pluginv3.0/evm-gauntlet'
-import { makeWallet as makeLedgerWallet } from '@pluginv3.0/starknet-gauntlet-ledger'
+} from '@plugin/evm-gauntlet'
+import { makeWallet as makeLedgerWallet } from '@plugin/starknet-gauntlet-ledger'
 
 export const noopPrompt: typeof prompt = async () => {}
 
@@ -64,6 +64,7 @@ const registerExecuteCommand = <UI, CI>(
         billingAccessController: process.env.BILLING_ACCESS_CONTROLLER,
         link: process.env.PLI,
         secret: flags.secret || process.env.SECRET,
+        randomSecret: flags.randomSecret || process.env.RANDOM_SECRET,
         withLedger: !!flags.withLedger || !!process.env.WITH_LEDGER,
         ledgerPath: (flags.ledgerPath as string) || process.env.LEDGER_PATH,
       }

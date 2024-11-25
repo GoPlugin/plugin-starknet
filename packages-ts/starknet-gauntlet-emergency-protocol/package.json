@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-emergency-protocol",
+  "name": "@plugin/starknet-gauntlet-emergency-protocol",
   "version": "0.0.1",
   "description": "Starknet Gauntlet Emergency Protocol",
   "keywords": [
@@ -25,8 +25,8 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/evm-gauntlet": "0.1.0",
-    "@pluginv3.0/starknet-gauntlet": "*"
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/evm-gauntlet": "0.1.0",
+    "@plugin/starknet-gauntlet": "*"
   }
 }

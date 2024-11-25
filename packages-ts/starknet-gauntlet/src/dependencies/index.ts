@@ -1,7 +1,6 @@
-import { logger, prompt } from '@pluginv3.0/gauntlet-core/dist/utils'
+import { logger, prompt } from '@plugin/gauntlet-core/dist/utils'
 import { IStarknetProvider } from '../provider'
 import { IStarknetWallet } from '../wallet'
-import { makeProvider } from '@pluginv3.0/evm-gauntlet'
 
 export interface Env {
   providerUrl: string
@@ -16,7 +15,7 @@ export interface Env {
 export interface Dependencies {
   logger: typeof logger
   prompt: typeof prompt
-  makeEnv: (flags: Record<string, string | boolean>) => Env
+  makeEnv: (flags: Record<string, string | boolean>) => Promise<Env> | Env
   makeProvider: (url: string, wallet?: IStarknetWallet) => IStarknetProvider
   makeWallet: (env: Env) => Promise<IStarknetWallet>
 }

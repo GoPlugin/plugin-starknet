@@ -15,7 +15,7 @@ fi
 usage="usage: $(basename "$0") [-h] [-a] [-p GO_PACKAGE] [-o OUTPUT_PNG_PATH]
 Create a dependency diagram for the provided go module:
     -h show this tip
-    -a include all dependencies (otherwise include only github.com/smartcontractkit dependencies)
+    -a include all dependencies (otherwise include only github.com/goplugin dependencies)
     -p package name (i.e. github.com/goplugin/plugin-starknet/relayer/pkg/plugin)
     -o output PNG path"
 
@@ -42,7 +42,7 @@ fi
 
 if [ ! "$ALL_DEPENDENCIES" ]; 
 then
-  godepgraph -s -o .,github.com/smartcontractkit $GO_MODULE_PATH | dot -Tpng -o $OUTPUT_PNG_PATH
+  godepgraph -s -o .,github.com/goplugin $GO_MODULE_PATH | dot -Tpng -o $OUTPUT_PNG_PATH
 else 
   godepgraph -s $GO_MODULE_PATH | dot -Tpng -o $OUTPUT_PNG_PATH
 fi

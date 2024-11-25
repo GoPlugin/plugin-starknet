@@ -1,7 +1,7 @@
-import { EVMExecuteCommandConfig, makeEVMExecuteCommand } from '@pluginv3.0/evm-gauntlet'
+import { EVMExecuteCommandConfig, makeEVMExecuteCommand } from '@plugin/evm-gauntlet'
 import { CONTRACT_LIST, starknetValidatorContractLoader } from '../../lib/contracts'
 import { CATEGORIES } from '../../lib/categories'
-import { isValidAddress } from '@pluginv3.0/starknet-gauntlet'
+import { isValidAddress } from '@plugin/starknet-gauntlet'
 
 export interface UserInput {
   address: string

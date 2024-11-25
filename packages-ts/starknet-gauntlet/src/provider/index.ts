@@ -1,11 +1,13 @@
 import { TransactionResponse } from '../transaction'
 import {
-  SequencerProvider as StarknetProvider,
+  RpcProvider as StarknetProvider,
+  DeclareContractResponse,
+  InvokeFunctionResponse,
   DeployContractResponse,
-  Sequencer,
   CompiledContract,
   Account,
   Call,
+  constants,
 } from 'starknet'
 import { IStarknetWallet } from '../wallet'
 
@@ -13,11 +15,29 @@ import { IStarknetWallet } from '../wallet'
 interface IProvider<P> {
   provider: P
   send: () => Promise<TransactionResponse>
-  deployContract: (
+  declareAndDeployContract: (
     contract: CompiledContract,
+    compiledClassHash: string,
     input: any,
     wait?: boolean,
     salt?: number,
+  ) => Promise<TransactionResponse>
+  deployContract: (
+    classHash: string,
+    input: any,
+    wait?: boolean,
+    salt?: number,
+  ) => Promise<TransactionResponse>
+  deployAccountContract: (
+    classHash: string,
+    input: any,
+    wait?: boolean,
+    salt?: number,
+  ) => Promise<TransactionResponse>
+  declareContract: (
+    contract: CompiledContract,
+    compiledClassHash?: string,
+    wait?: boolean,
   ) => Promise<TransactionResponse>
   signAndSend: (calls: Call[], wait?: boolean) => Promise<TransactionResponse>
 }
@@ -32,7 +52,7 @@ export const makeProvider = (
 
 export const wrapResponse = (
   provider: IStarknetProvider,
-  response: Sequencer.AddTransactionResponse | DeployContractResponse,
+  response: InvokeFunctionResponse | DeployContractResponse | DeclareContractResponse,
   address?: string,
 ): TransactionResponse => {
   const txResponse: TransactionResponse = {
@@ -52,7 +72,7 @@ export const wrapResponse = (
         success = false
       }
       const status = await provider.provider.getTransactionStatus(response.transaction_hash)
-      txResponse.tx.code = status.tx_status as any // For some reason, starknet does not consider any other status than "TRANSACTION_RECEIVED"
+      txResponse.code = status.finality_status // For some reason, starknet does not consider any other status than "TRANSACTION_RECEIVED"
       return { success }
     },
     status: 'PENDING',
@@ -65,15 +85,27 @@ class Provider implements IStarknetProvider {
   provider: StarknetProvider
   account: Account
 
-  constructor(baseUrl: string, wallet?: IStarknetWallet) {
-    this.provider = new StarknetProvider({ baseUrl })
+  constructor(nodeUrl: string, wallet?: IStarknetWallet) {
+    this.provider = new StarknetProvider({ nodeUrl })
     if (wallet) {
-      this.account = new Account(this.provider, wallet.getAccountAddress(), wallet.signer)
+      this.account = new Account(
+        this.provider,
+        wallet.getAccountAddress(),
+        wallet.signer,
+        /* cairoVersion= */ null, // don't set cairo version so that it's automatically detected from the contract
+        /* transactionVersion= */ constants.TRANSACTION_VERSION.V3,
+      )
     }
   }
 
   setAccount(wallet: IStarknetWallet) {
-    this.account = new Account(this.provider, wallet.getAccountAddress(), wallet.signer)
+    this.account = new Account(
+      this.provider,
+      wallet.getAccountAddress(),
+      wallet.signer,
+      /* cairoVersion= */ null,
+      /* transactionVersion= */ constants.TRANSACTION_VERSION.V3,
+    )
   }
 
   send = async () => {
@@ -81,20 +113,76 @@ class Provider implements IStarknetProvider {
     return {} as TransactionResponse
   }
 
-  deployContract = async (
+  /**
+   * Compiles the contract and declares it using the generated ABI.
+   * Then deploys an instance of the declared contract.
+   * If contract has already been declared it will only be deployed.
+   */
+  declareAndDeployContract = async (
     contract: CompiledContract,
+    compiledClassHash?: string,
     input: any = [],
     wait = true,
     salt = undefined,
   ) => {
     const tx = await this.account.declareAndDeploy({
       contract,
-      salt: salt ? '0x' + salt.toString(16) : salt, // convert number to hex or leave undefined
+      compiledClassHash,
+      salt: !isNaN(salt) ? '0x' + salt.toString(16) : salt, // convert number to hex or leave undefined
       // unique: false,
       ...(!!input && input.length > 0 && { constructorCalldata: input }),
     })
 
     const response = wrapResponse(this, tx.deploy)
+
+    if (!wait) return response
+    await response.wait()
+    return response
+  }
+
+  /**
+   * Compiles the contract and declares it using the generated ABI.
+   */
+  declareContract = async (contract: CompiledContract, compiledClassHash?: string, wait = true) => {
+    const tx = await this.account.declare({
+      contract,
+      compiledClassHash,
+    })
+
+    const response = wrapResponse(this, tx, 'not applicable for declares')
+
+    if (!wait) return response
+    await response.wait()
+    return response
+  }
+
+  /**
+   * Deploys a contract given a class hash
+   */
+  deployContract = async (classHash: string, input: any = [], wait = true, salt = undefined) => {
+    const tx = await this.account.deployContract({
+      classHash: classHash,
+      salt: !isNaN(salt) ? '0x' + salt.toString(16) : salt,
+      ...(!!input && input.length > 0 && { constructorCalldata: input }),
+    })
+    const response = wrapResponse(this, tx)
+
+    if (!wait) return response
+    await response.wait()
+    return response
+  }
+
+  /**
+   * Deploys an account contract using DEPLOY_ACCOUNT given a class hash
+   */
+
+  deployAccountContract = async (classHash: string, input: any = [], wait = true, salt = 0) => {
+    const tx = await this.account.deployAccount({
+      classHash: classHash,
+      constructorCalldata: input,
+      addressSalt: '0x' + salt.toString(16),
+    })
+    const response = wrapResponse(this, tx)
 
     if (!wait) return response
     await response.wait()

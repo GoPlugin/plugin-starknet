@@ -3,136 +3,225 @@ package common
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/dontpanicdao/caigo/gateway"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
-	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 
-	"github.com/goplugin/plugin-env/environment"
-	"github.com/goplugin/plugin-env/pkg/alias"
-	"github.com/goplugin/plugin-env/pkg/helm/plugin"
-	"github.com/goplugin/plugin-env/pkg/helm/mockserver"
-	mockservercfg "github.com/goplugin/plugin-env/pkg/helm/mockserver-cfg"
-	"github.com/goplugin/plugin-starknet/ops/devnet"
+	ctfconfig "github.com/goplugin/plugin-testing-framework/config"
+	"github.com/goplugin/plugin-testing-framework/k8s/environment"
+	"github.com/goplugin/plugin-testing-framework/k8s/pkg/helm/plugin"
+	mock_adapter "github.com/goplugin/plugin-testing-framework/k8s/pkg/helm/mock-adapter"
 	"github.com/goplugin/pluginv3.0/integration-tests/client"
+	"github.com/goplugin/pluginv3.0/integration-tests/docker/test_env"
 	"github.com/goplugin/pluginv3.0/v2/core/services/job"
-	"github.com/goplugin/pluginv3.0/v2/core/services/relay"
-)
 
-var (
-	serviceKeyL1        = "Hardhat"
-	serviceKeyL2        = "starknet-dev"
-	serviceKeyPlugin = "plugin"
-	chainName           = "starknet"
-	chainId             = gateway.GOERLI_ID
+	chainconfig "github.com/goplugin/plugin-starknet/integration-tests/config"
+	"github.com/goplugin/plugin-starknet/integration-tests/testconfig"
+	"github.com/goplugin/plugin-starknet/ops/devnet"
+	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 )
 
 type Common struct {
-	P2PPort             string
-	ServiceKeyL1        string
-	ServiceKeyL2        string
-	ServiceKeyPlugin string
-	ChainName           string
-	ChainId             string
-	NodeCount           int
-	TTL                 time.Duration
-	Testnet             bool
-	L2RPCUrl            string
-	PrivateKey          string
-	Account             string
-	ClConfig            map[string]interface{}
-	K8Config            *environment.Config
-	Env                 *environment.Environment
+	ChainDetails    *chainconfig.Config
+	TestEnvDetails  *TestEnvDetails
+	Env             *environment.Environment
+	RPCDetails      *RPCDetails
+	PluginConfig string
+	TestConfig      *testconfig.TestConfig
 }
 
-func New() *Common {
-	var err error
-	c := &Common{
-		ChainName:           chainName,
-		ChainId:             chainId,
-		ServiceKeyPlugin: serviceKeyPlugin,
-		ServiceKeyL1:        serviceKeyL1,
-		ServiceKeyL2:        serviceKeyL2,
-	}
-	// Checking if count of OCR nodes is defined in ENV
-	nodeCountSet := getEnv("NODE_COUNT")
-	if nodeCountSet != "" {
-		c.NodeCount, err = strconv.Atoi(nodeCountSet)
-		if err != nil {
-			panic(fmt.Sprintf("Please define a proper node count for the test: %v", err))
-		}
-	} else {
-		panic("Please define NODE_COUNT")
+type TestEnvDetails struct {
+	TestDuration time.Duration
+	K8Config     *environment.Config
+	NodeOpts     []test_env.ClNodeOption
+}
+
+type RPCDetails struct {
+	RPCL1Internal       string
+	RPCL2Internal       string
+	RPCL2InternalAPIKey string
+	RPCL1External       string
+	RPCL2External       string
+	MockServerURL       string
+	MockServerEndpoint  string
+	P2PPort             string
+}
+
+func New(testConfig *testconfig.TestConfig) *Common {
+	var c *Common
+	chainDetails := chainconfig.DevnetConfig()
+
+	duration, err := time.ParseDuration(*testConfig.OCR2.TestDuration)
+	if err != nil {
+		panic("Invalid test duration")
 	}
 
-	// Checking if TTL env var is set in ENV
-	ttlValue := getEnv("TTL")
-	if ttlValue != "" {
-		duration, err := time.ParseDuration(ttlValue)
-		if err != nil {
-			panic(fmt.Sprintf("Please define a proper duration for the test: %v", err))
-		}
-		c.TTL, err = time.ParseDuration(*alias.ShortDur(duration))
-		if err != nil {
-			panic(fmt.Sprintf("Please define a proper duration for the test: %v", err))
+	if *testConfig.Common.Network == "testnet" {
+		chainDetails = chainconfig.SepoliaConfig()
+		chainDetails.L2RPCInternal = *testConfig.Common.L2RPCUrl
+		if testConfig.Common.L2RPCApiKey == nil {
+			chainDetails.L2RPCInternalAPIKey = ""
+		} else {
+			chainDetails.L2RPCInternalAPIKey = *testConfig.Common.L2RPCApiKey
 		}
 	} else {
-		panic("Please define TTL of env")
+		// set up mocked local feedernet server because starknet-devnet does not provide one
+		localDevnetFeederSrv := starknet.NewTestFeederServer()
+		chainDetails.FeederURL = localDevnetFeederSrv.URL
 	}
 
-	// Setting optional parameters
-	c.L2RPCUrl = getEnv("L2_RPC_URL") // Fetch L2 RPC url if defined
-	c.Testnet = c.L2RPCUrl != ""
-	c.PrivateKey = getEnv("PRIVATE_KEY")
-	c.Account = getEnv("ACCOUNT")
+	c = &Common{
+		TestConfig:   testConfig,
+		ChainDetails: chainDetails,
+		TestEnvDetails: &TestEnvDetails{
+			TestDuration: duration,
+		},
+		RPCDetails: &RPCDetails{
+			P2PPort:             "6690",
+			RPCL2Internal:       chainDetails.L2RPCInternal,
+			RPCL2InternalAPIKey: chainDetails.L2RPCInternalAPIKey,
+		},
+	}
+	// provide getters for TestConfig (pointers to chain + rpc details)
+	c.TestConfig.GetChainID = func() string { return c.ChainDetails.ChainID }
+	c.TestConfig.GetFeederURL = func() string { return c.ChainDetails.FeederURL }
+	c.TestConfig.GetRPCL2Internal = func() string { return c.RPCDetails.RPCL2Internal }
+	c.TestConfig.GetRPCL2InternalAPIKey = func() string { return c.RPCDetails.RPCL2InternalAPIKey }
 
 	return c
 }
 
-// getEnv gets the environment variable if it exists and sets it for the remote runner
-func getEnv(v string) string {
-	val := os.Getenv(v)
-	if val != "" {
-		os.Setenv(fmt.Sprintf("TEST_%s", v), val)
+func (c *Common) Default(t *testing.T, namespacePrefix string) (*Common, error) {
+	c.TestEnvDetails.K8Config = &environment.Config{
+		NamespacePrefix: fmt.Sprintf("starknet-%s", namespacePrefix),
+		TTL:             c.TestEnvDetails.TestDuration,
+		Test:            t,
 	}
-	return val
+
+	if *c.TestConfig.Common.InsideK8s {
+		tomlString, err := c.TestConfig.GetNodeConfigTOML()
+		if err != nil {
+			return nil, err
+		}
+		var overrideFn = func(_ interface{}, target interface{}) {
+			ctfconfig.MustConfigOverridePluginVersion(c.TestConfig.PluginImage, target)
+		}
+		cd := plugin.NewWithOverride(0, map[string]any{
+			"toml":     tomlString,
+			"replicas": *c.TestConfig.OCR2.NodeCount,
+			"plugin": map[string]interface{}{
+				"resources": map[string]interface{}{
+					"requests": map[string]interface{}{
+						"cpu":    "2000m",
+						"memory": "4Gi",
+					},
+					"limits": map[string]interface{}{
+						"cpu":    "2000m",
+						"memory": "4Gi",
+					},
+				},
+			},
+			"db": map[string]any{
+				"image": map[string]any{
+					"version": *c.TestConfig.Common.PostgresVersion,
+				},
+				"stateful": c.TestConfig.Common.Stateful,
+			},
+		}, c.TestConfig.PluginImage, overrideFn)
+		c.Env = environment.New(c.TestEnvDetails.K8Config).
+			AddHelm(devnet.New(nil)).
+			AddHelm(mock_adapter.New(nil)).
+			AddHelm(cd)
+	}
+
+	return c, nil
 }
 
-// CreateKeys Creates node keys and defines chain and nodes for each node
-func (c *Common) CreateKeys(env *environment.Environment) ([]client.NodeKeysBundle, []*client.Plugin, error) {
-	PluginNodes, err := client.ConnectPluginNodes(env)
-	if err != nil {
-		return nil, nil, err
-	}
-	NKeys, _, err := client.CreateNodeKeysBundle(PluginNodes, c.ChainName, c.ChainId)
-	if err != nil {
-		return nil, nil, err
-	}
-	for _, n := range PluginNodes {
-		_, _, err = n.CreateStarkNetChain(&client.StarkNetChainAttributes{
-			Type:    c.ChainName,
-			ChainID: c.ChainId,
-			Config:  client.StarkNetChainConfig{},
+func (c *Common) SetLocalEnvironment(t *testing.T) {
+	// Run scripts to set up local test environment
+	log.Info().Msg("Starting starknet-devnet container...")
+	err := exec.Command("../../scripts/devnet.sh").Run()
+	require.NoError(t, err, "Could not start devnet container")
+	// TODO: add hardhat too
+	log.Info().Msg("Starting postgres container...")
+	err = exec.Command("../../scripts/postgres.sh").Run()
+	require.NoError(t, err, "Could not start postgres container")
+	log.Info().Msg("Starting mock adapter...")
+	err = exec.Command("../../scripts/mock-adapter.sh").Run()
+	require.NoError(t, err, "Could not start mock adapter")
+	log.Info().Msg("Starting core nodes...")
+	cmd := exec.Command("../../scripts/core.sh")
+	cmd.Env = append(os.Environ(), fmt.Sprintf("CL_CONFIG=%s", c.PluginConfig))
+	err = cmd.Run()
+	require.NoError(t, err, "Could not start core nodes")
+	log.Info().Msg("Set up local stack complete.")
+
+	// Set PluginNodeDetails
+	var nodeDetails []*environment.PluginNodeDetail
+	var basePort = 50100
+	for i := 0; i < *c.TestConfig.OCR2.NodeCount; i++ {
+		dbLocalIP := fmt.Sprintf("postgresql://postgres:postgres@plugin.postgres:5432/starknet_test_%d?sslmode=disable", i+1)
+		nodeDetails = append(nodeDetails, &environment.PluginNodeDetail{
+			ChartName: "unused",
+			PodName:   "unused",
+			LocalIP:   "http://127.0.0.1:" + strconv.Itoa(basePort+i),
+			// InternalIP: "http://host.container.internal:" + strconv.Itoa(basePort+i), // TODO: plugin.core.${i}:6688
+			InternalIP: fmt.Sprintf("http://plugin.core.%d:6688", i+1), // TODO: plugin.core.1:6688
+			DBLocalIP:  dbLocalIP,
 		})
-		if err != nil {
-			return nil, nil, err
-		}
-		_, _, err = n.CreateStarkNetNode(&client.StarkNetNodeAttributes{
-			Name:    c.ChainName,
-			ChainID: c.ChainId,
-			Url:     env.URLs[c.ServiceKeyL2][1],
-		})
-		if err != nil {
-			return nil, nil, err
-		}
 	}
-	return NKeys, PluginNodes, nil
+	c.Env.PluginNodeDetails = nodeDetails
+}
+
+func (c *Common) TearDownLocalEnvironment(t *testing.T) {
+	log.Info().Msg("Tearing down core nodes...")
+	err := exec.Command("../../scripts/core.down.sh").Run()
+	require.NoError(t, err, "Could not tear down core nodes")
+	log.Info().Msg("Tearing down mock adapter...")
+	err = exec.Command("../../scripts/mock-adapter.down.sh").Run()
+	require.NoError(t, err, "Could not tear down mock adapter")
+	log.Info().Msg("Tearing down postgres container...")
+	err = exec.Command("../../scripts/postgres.down.sh").Run()
+	require.NoError(t, err, "Could not tear down postgres container")
+	log.Info().Msg("Tearing down devnet container...")
+	err = exec.Command("../../scripts/devnet.down.sh").Run()
+	require.NoError(t, err, "Could not tear down devnet container")
+	log.Info().Msg("Tear down local stack complete.")
+}
+
+func (c *Common) CreateNodeKeysBundle(nodes []*client.PluginClient) ([]client.NodeKeysBundle, error) {
+	nkb := make([]client.NodeKeysBundle, 0)
+	for _, n := range nodes {
+		p2pkeys, err := n.MustReadP2PKeys()
+		if err != nil {
+			return nil, err
+		}
+
+		peerID := p2pkeys.Data[0].Attributes.PeerID
+		txKey, _, err := n.CreateTxKey(c.ChainDetails.ChainName, c.ChainDetails.ChainID)
+		if err != nil {
+			return nil, err
+		}
+		ocrKey, _, err := n.CreateOCR2Key(c.ChainDetails.ChainName)
+		if err != nil {
+			return nil, err
+		}
+
+		nkb = append(nkb, client.NodeKeysBundle{
+			PeerID:  peerID,
+			OCR2Key: *ocrKey,
+			TXKey:   *txKey,
+		})
+	}
+	return nkb, nil
 }
 
 // CreateJobsForContract Creates and sets up the boostrap jobs as well as OCR jobs
@@ -140,32 +229,31 @@ func (c *Common) CreateJobsForContract(cc *PluginClient, observationSource strin
 	// Define node[0] as bootstrap node
 	cc.bootstrapPeers = []client.P2PData{
 		{
-			RemoteIP:   cc.PluginNodes[0].RemoteIP(),
-			RemotePort: c.P2PPort,
-			PeerID:     cc.NKeys[0].PeerID,
+			InternalIP:   cc.PluginNodes[0].InternalIP(),
+			InternalPort: c.RPCDetails.P2PPort,
+			PeerID:       cc.NKeys[0].PeerID,
 		},
 	}
 
 	// Defining relay config
 	bootstrapRelayConfig := job.JSONConfig{
-		"nodeName":       fmt.Sprintf("\"starknet-OCRv2-%s-%s\"", "node", uuid.NewV4().String()),
-		"accountAddress": fmt.Sprintf("\"%s\"", accountAddresses[0]),
-		"chainID":        fmt.Sprintf("\"%s\"", c.ChainId),
+		"nodeName":       fmt.Sprintf("starknet-OCRv2-%s-%s", "node", uuid.New().String()),
+		"accountAddress": accountAddresses[0],
+		"chainID":        c.ChainDetails.ChainID,
 	}
 
 	oracleSpec := job.OCR2OracleSpec{
 		ContractID:                  ocrControllerAddress,
-		Relay:                       relay.StarkNet,
+		Relay:                       c.ChainDetails.ChainName,
 		RelayConfig:                 bootstrapRelayConfig,
 		ContractConfigConfirmations: 1, // don't wait for confirmation on devnet
 	}
 	// Setting up bootstrap node
 	jobSpec := &client.OCR2TaskJobSpec{
-		Name:           fmt.Sprintf("starknet-OCRv2-%s-%s", "bootstrap", uuid.NewV4().String()),
+		Name:           fmt.Sprintf("starknet-OCRv2-%s-%s", "bootstrap", uuid.New().String()),
 		JobType:        "bootstrap",
 		OCR2OracleSpec: oracleSpec,
 	}
-
 	_, _, err := cc.PluginNodes[0].CreateJob(jobSpec)
 	if err != nil {
 		return err
@@ -177,24 +265,29 @@ func (c *Common) CreateJobsForContract(cc *PluginClient, observationSource strin
 		p2pBootstrappers = append(p2pBootstrappers, cc.bootstrapPeers[i].P2PV2Bootstrapper())
 	}
 
+	sourceValueBridge := &client.BridgeTypeAttributes{
+		Name: "mockserver-bridge",
+		URL:  c.RPCDetails.MockServerEndpoint + "/" + strings.TrimPrefix(c.RPCDetails.MockServerURL, "/"),
+	}
+
 	// Setting up job specs
 	for nIdx, n := range cc.PluginNodes {
 		if nIdx == 0 {
 			continue
 		}
-		_, err := n.CreateBridge(cc.bTypeAttr)
+		err := n.MustCreateBridge(sourceValueBridge)
 		if err != nil {
 			return err
 		}
 		relayConfig := job.JSONConfig{
 			"nodeName":       bootstrapRelayConfig["nodeName"],
-			"accountAddress": fmt.Sprintf("\"%s\"", accountAddresses[nIdx]),
+			"accountAddress": accountAddresses[nIdx],
 			"chainID":        bootstrapRelayConfig["chainID"],
 		}
 
 		oracleSpec = job.OCR2OracleSpec{
 			ContractID:                  ocrControllerAddress,
-			Relay:                       relay.StarkNet,
+			Relay:                       c.ChainDetails.ChainName,
 			RelayConfig:                 relayConfig,
 			PluginType:                  "median",
 			OCRKeyBundleID:              null.StringFrom(cc.NKeys[nIdx].OCR2Key.Data.ID),
@@ -207,50 +300,15 @@ func (c *Common) CreateJobsForContract(cc *PluginClient, observationSource strin
 		}
 
 		jobSpec = &client.OCR2TaskJobSpec{
-			Name:              fmt.Sprintf("starknet-OCRv2-%d-%s", nIdx, uuid.NewV4().String()),
+			Name:              fmt.Sprintf("starknet-OCRv2-%d-%s", nIdx, uuid.New().String()),
 			JobType:           "offchainreporting2",
 			OCR2OracleSpec:    oracleSpec,
 			ObservationSource: observationSource,
 		}
-		_, _, err = n.CreateJob(jobSpec)
+		_, err = n.MustCreateJob(jobSpec)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func (c *Common) Default(t *testing.T) {
-	c.K8Config = &environment.Config{NamespacePrefix: "plugin-ocr-starknet", TTL: c.TTL, Test: t}
-	starknetUrl := fmt.Sprintf("http://%s:%d", serviceKeyL2, 5000)
-	if c.Testnet {
-		starknetUrl = c.L2RPCUrl
-	}
-	baseTOML := fmt.Sprintf(`[[Starknet]]
-Enabled = true
-ChainID = '%s'
-[[Starknet.Nodes]]
-Name = 'primary'
-URL = '%s'
-
-[OCR2]
-Enabled = true
-
-[P2P]
-[P2P.V2]
-Enabled = true
-DeltaDial = '5s'
-DeltaReconcile = '5s'
-ListenAddresses = ['0.0.0.0:6690']
-`, c.ChainId, starknetUrl)
-	log.Debug().Str("toml", baseTOML).Msg("TOML")
-	c.ClConfig = map[string]interface{}{
-		"replicas": c.NodeCount,
-		"toml":     baseTOML,
-	}
-	c.Env = environment.New(c.K8Config).
-		AddHelm(devnet.New(nil)).
-		AddHelm(mockservercfg.New(nil)).
-		AddHelm(mockserver.New(nil)).
-		AddHelm(plugin.New(0, c.ClConfig))
 }

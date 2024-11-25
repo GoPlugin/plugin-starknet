@@ -34,6 +34,15 @@ Threshold can only be updated through a transaction executed from the multisig i
 yarn gauntlet multisig:set_thresold:multisig --network=<NETWORK> --threshold=<APPROVALS_NEEDED> <MULTISIG_CONTRACT_ADDRESS>
 ```
 
+### Upgrade
+
+Upgrade can only be updated through a transaction executed from the multisig itself.
+
+```bash
+yarn gauntlet multisig:upgrade:multisig --network=<NETWORK> --classHash=<CLASS_HASH> <MULTISIG_CONTRACT_ADDRESS>
+```
+
+
 ## Wrapping Gauntlet commands
 
 A [wrap function](./src/wrapper/index.ts#L30) is exposed from this package. It allows to wrap any Gauntlet command and make its functionality available to be executed from a multisig wallet. The process is the same for every command:

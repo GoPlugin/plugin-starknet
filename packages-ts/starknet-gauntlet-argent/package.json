@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-argent",
+  "name": "@plugin/starknet-gauntlet-argent",
   "version": "0.0.1",
   "description": "Starknet Gauntlet Argent contracts",
   "keywords": [
@@ -25,7 +25,7 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet": "*"
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet": "*"
   }
 }

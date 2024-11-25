@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-ocr2",
+  "name": "@plugin/starknet-gauntlet-ocr2",
   "version": "0.0.1",
   "description": "Starknet Gauntlet OCR2",
   "keywords": [
@@ -25,9 +25,9 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0/gauntlet-contracts-ocr2": "0.2.2",
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet": "*",
-    "@pluginv3.0/starknet-gauntlet-oz": "*"
+    "@plugin/gauntlet-contracts-ocr2": "0.2.2",
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet": "*",
+    "@plugin/starknet-gauntlet-oz": "*"
   }
 }

@@ -1,4 +1,4 @@
-import { ExecuteCommandConfig, makeExecuteCommand } from '@pluginv3.0/starknet-gauntlet'
+import { ExecuteCommandConfig, makeExecuteCommand } from '@plugin/starknet-gauntlet'
 import { CATEGORIES } from '../../lib/categories'
 import { ocr2ContractLoader, CONTRACT_LIST } from '../../lib/contracts'
 

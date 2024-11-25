@@ -2,11 +2,11 @@ import {
   ExecuteCommandConfig,
   isValidAddress,
   makeExecuteCommand,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { CATEGORIES } from '../../lib/categories'
 import { CONTRACT_LIST, uptimeFeedContractLoader } from '../../lib/contracts'
 
-type ContractInput = [address: string]
+type ContractInput = { address: string }
 
 export interface SetL1SenderInput {
   address: string
@@ -27,7 +27,7 @@ const makeUserInput = async (flags): Promise<SetL1SenderInput> => {
 }
 
 const makeContractInput = async (input: SetL1SenderInput): Promise<ContractInput> => {
-  return [input.address]
+  return { address: input.address }
 }
 
 const commandConfig: ExecuteCommandConfig<SetL1SenderInput, ContractInput> = {

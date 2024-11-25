@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-oz",
+  "name": "@plugin/starknet-gauntlet-oz",
   "version": "0.0.1",
   "description": "Starknet Gauntlet Open Zeppelin Contracts",
   "keywords": [
@@ -25,8 +25,7 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0-dev/starkgate-open-zeppelin": "^0.5.0",
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet": "*"
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet": "*"
   }
 }

@@ -1,2 +1,3 @@
-import Deploy from './deploy'
-export default [Deploy]
+import { Deploy, DeployAccount } from './deploy'
+import Declare from './declare'
+export default [Deploy, DeployAccount, Declare]

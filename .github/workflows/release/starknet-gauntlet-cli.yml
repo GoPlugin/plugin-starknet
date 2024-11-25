@@ -24,7 +24,7 @@ jobs:
         run: nix develop -c yarn bundle
       # Store gauntlet-cli version
       - name: Set Env Variables
-        run: echo "STARKNET_GAUNTLET_CLI=$(npm info @pluginv3.0/starknet-gauntlet-cli version)" >> $GITHUB_ENV
+        run: echo "STARKNET_GAUNTLET_CLI=$(npm info @plugin/starknet-gauntlet-cli version)" >> $GITHUB_ENV
       # Upload gauntlet binary to gauntlet-cli release
       - name: Upload Gauntlet Binary
         uses: svenstaro/upload-release-action@v2
@@ -33,5 +33,5 @@ jobs:
           file: bin/plugin-starknet-*
           file_glob: true
           tag: |
-            @pluginv3.0/starknet-gauntlet-cli@${{ env.STARKNET_GAUNTLET_CLI }}
+            @plugin/starknet-gauntlet-cli@${{ env.STARKNET_GAUNTLET_CLI }}
           overwrite: false

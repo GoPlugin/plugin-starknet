@@ -1,9 +1,8 @@
-import { BN } from '@pluginv3.0/gauntlet-core/dist/utils'
 import {
   InspectCommandConfig,
   IStarknetProvider,
   makeInspectionCommand,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { CATEGORIES } from '../../../lib/categories'
 import { tokenContractLoader } from '../../../lib/contracts'
 
@@ -23,7 +22,7 @@ const makeComparisionData = (provider: IStarknetProvider) => async (
   return {
     toCompare: null,
     result: {
-      balance: new BN(balance.res).toString(),
+      balance: BigInt(balance.res).toString(),
     },
   }
 }

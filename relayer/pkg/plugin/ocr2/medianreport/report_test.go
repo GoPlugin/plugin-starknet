@@ -6,13 +6,83 @@ import (
 	"testing"
 	"time"
 
-	junotypes "github.com/NethermindEth/juno/pkg/types"
+	"github.com/NethermindEth/starknet.go/curve"
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/goplugin/plugin-libocr/commontypes"
 	"github.com/goplugin/plugin-libocr/offchainreporting2/reportingplugin/median"
 )
+
+func TestBuildReportWithNegativeValues(t *testing.T) {
+	c := ReportCodec{}
+	oo := []median.ParsedAttributedObservation{}
+
+	oo = append(oo, median.ParsedAttributedObservation{
+		Timestamp:        uint32(time.Now().Unix()),
+		Value:            big.NewInt(-10),
+		JuelsPerFeeCoin:  big.NewInt(10),
+		GasPriceSubunits: big.NewInt(10),
+		Observer:         commontypes.OracleID(1),
+	})
+
+	_, err := c.BuildReport(oo)
+	assert.ErrorContains(t, err, "starknet does not support negative values: value = (-10), fee = (10), gas = (10)")
+
+	oo = []median.ParsedAttributedObservation{}
+	oo = append(oo, median.ParsedAttributedObservation{
+		Timestamp:        uint32(time.Now().Unix()),
+		Value:            big.NewInt(10),
+		JuelsPerFeeCoin:  big.NewInt(-10),
+		GasPriceSubunits: big.NewInt(10),
+		Observer:         commontypes.OracleID(1),
+	})
+
+	_, err = c.BuildReport(oo)
+	assert.ErrorContains(t, err, "starknet does not support negative values: value = (10), fee = (-10), gas = (10)")
+
+	oo = []median.ParsedAttributedObservation{}
+	oo = append(oo, median.ParsedAttributedObservation{
+		Timestamp:        uint32(time.Now().Unix()),
+		Value:            big.NewInt(10),
+		JuelsPerFeeCoin:  big.NewInt(10),
+		GasPriceSubunits: big.NewInt(-10),
+		Observer:         commontypes.OracleID(1),
+	})
+
+	_, err = c.BuildReport(oo)
+	assert.ErrorContains(t, err, "starknet does not support negative values: value = (10), fee = (10), gas = (-10)")
+}
+
+func TestBuildReportNoObserversOverflow(t *testing.T) {
+	c := ReportCodec{}
+	oo := []median.ParsedAttributedObservation{}
+	fmt.Println("hello")
+	v := big.NewInt(0)
+	v.SetString("1000000000000000000", 10)
+
+	// test largest possible encoded observers byte array
+	for i := 30; i >= 0; i-- {
+		oo = append(oo, median.ParsedAttributedObservation{
+			Timestamp:        uint32(time.Now().Unix()),
+			Value:            big.NewInt(1234567890),
+			GasPriceSubunits: big.NewInt(2),
+			JuelsPerFeeCoin:  v,
+			Observer:         commontypes.OracleID(i),
+		})
+	}
+
+	report, err := c.BuildReport(oo)
+	assert.Nil(t, err)
+
+	index := timestampSizeBytes
+	observersBytes := []byte(report[index : index+observersSizeBytes])
+	observersBig := starknetutils.BytesToBig(observersBytes)
+
+	// encoded observers felt is less than max felt
+	assert.Equal(t, -1, observersBig.Cmp(curve.Curve.P), "observers should be less than max felt")
+}
 
 func TestBuildReport(t *testing.T) {
 	c := ReportCodec{}
@@ -24,16 +94,20 @@ func TestBuildReport(t *testing.T) {
 	v := big.NewInt(0)
 	v.SetString("1000000000000000000", 10)
 
+	// 0x01 pad the first byte
+	observers[0] = uint8(1)
 	for i := 0; i < n; i++ {
 		oo = append(oo, median.ParsedAttributedObservation{
-			Timestamp:       uint32(time.Now().Unix()),
-			Value:           big.NewInt(1234567890),
-			JuelsPerFeeCoin: v,
-			Observer:        commontypes.OracleID(i),
+			Timestamp:        uint32(time.Now().Unix()),
+			Value:            big.NewInt(1234567890),
+			GasPriceSubunits: big.NewInt(2),
+			JuelsPerFeeCoin:  v,
+			Observer:         commontypes.OracleID(i),
 		})
 
 		// create expected outputs
-		observers[i] = uint8(i)
+		// remember to add 1 byte offset to avoid felt overflow
+		observers[i+1] = uint8(i)
 	}
 
 	report, err := c.BuildReport(oo)
@@ -44,7 +118,7 @@ func TestBuildReport(t *testing.T) {
 	assert.Equal(t, totalLen, len(report), "validate length")
 
 	// validate timestamp
-	timestamp := junotypes.BytesToFelt(report[0:timestampSizeBytes]).Big()
+	timestamp := new(big.Int).SetBytes(report[0:timestampSizeBytes])
 	assert.Equal(t, uint64(oo[0].Timestamp), timestamp.Uint64(), "validate timestamp")
 
 	// validate observers
@@ -53,7 +127,7 @@ func TestBuildReport(t *testing.T) {
 
 	// validate observer count
 	index += observersSizeBytes
-	count := junotypes.BytesToFelt(report[index : index+observationsLenBytes]).Big()
+	count := new(big.Int).SetBytes(report[index : index+observationsLenBytes])
 	assert.Equal(t, uint8(n), uint8(count.Uint64()), "validate observer count")
 
 	// validate observations
@@ -68,7 +142,7 @@ func TestBuildReport(t *testing.T) {
 
 	// validate gasPrice
 	index += juelsPerFeeCoinSizeBytes
-	expectedGasPrice := big.NewInt(1)
+	expectedGasPrice := big.NewInt(2)
 	assert.Equal(t, expectedGasPrice.FillBytes(make([]byte, gasPriceSizeBytes)), []byte(report[index:index+gasPriceSizeBytes]), "validate gasPrice")
 }
 
@@ -99,24 +173,6 @@ func TestMedianFromReport(t *testing.T) {
 			obs:            []*big.Int{big.NewInt(1), big.NewInt(1)},
 			expectedMedian: big.NewInt(1),
 		},
-		{
-			name: "one negative one positive",
-			obs:  []*big.Int{big.NewInt(-1), big.NewInt(1)},
-			// sorts to -1, 1
-			expectedMedian: big.NewInt(1),
-		},
-		{
-			name: "two negative",
-			obs:  []*big.Int{big.NewInt(-2), big.NewInt(-1)},
-			// will sort to -2, -1
-			expectedMedian: big.NewInt(-1),
-		},
-		{
-			name: "three negative",
-			obs:  []*big.Int{big.NewInt(-5), big.NewInt(-3), big.NewInt(-1)},
-			// will sort to -5, -3, -1
-			expectedMedian: big.NewInt(-3),
-		},
 	}
 
 	// add cases for observation number from [1..31]
@@ -138,18 +194,20 @@ func TestMedianFromReport(t *testing.T) {
 			var pos []median.ParsedAttributedObservation
 			for i, obs := range tc.obs {
 				pos = append(pos, median.ParsedAttributedObservation{
-					Value:           obs,
-					JuelsPerFeeCoin: obs,
-					Observer:        commontypes.OracleID(uint8(i))},
+					Value:            obs,
+					JuelsPerFeeCoin:  obs,
+					GasPriceSubunits: obs,
+					Observer:         commontypes.OracleID(uint8(i))},
 				)
 			}
 			report, err := cdc.BuildReport(pos)
 			require.NoError(t, err)
-			assert.Equal(t, len(report), cdc.MaxReportLength(len(tc.obs)))
+			max, err := cdc.MaxReportLength(len(tc.obs))
+			require.NoError(t, err)
+			assert.Equal(t, len(report), max)
 			med, err := cdc.MedianFromReport(report)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedMedian.String(), med.String())
 		})
 	}
-
 }

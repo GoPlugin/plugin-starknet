@@ -1,7 +1,12 @@
-import { ExecuteCommandConfig, makeExecuteCommand } from '@pluginv3.0/starknet-gauntlet'
-import { BN } from '@pluginv3.0/gauntlet-core/dist/utils'
+import {
+  CONTRACT_TYPES,
+  ExecuteCommandConfig,
+  ExecutionContext,
+  makeExecuteCommand,
+} from '@plugin/starknet-gauntlet'
 import { ocr2ContractLoader } from '../../lib/contracts'
-import { SetBilling, SetBillingInput } from '@pluginv3.0/gauntlet-contracts-ocr2'
+import { SetBilling, SetBillingInput } from '@plugin/gauntlet-contracts-ocr2'
+import { getRDD } from '@plugin/starknet-gauntlet'
 
 type StarknetSetBillingInput = SetBillingInput & { gasBase: number; gasPerSignature: number }
 
@@ -14,13 +19,16 @@ type ContractInput = [
   },
 ]
 
-const makeContractInput = async (input: StarknetSetBillingInput): Promise<ContractInput> => {
+const makeContractInput = async (
+  input: StarknetSetBillingInput,
+  ctx: ExecutionContext,
+): Promise<ContractInput> => {
   return [
     {
-      observation_payment_gjuels: new BN(input.observationPaymentGjuels).toNumber(),
-      transmission_payment_gjuels: new BN(input.transmissionPaymentGjuels).toNumber(),
-      gas_base: new BN(input.gasBase).toNumber(),
-      gas_per_signature: new BN(input.gasPerSignature).toNumber(),
+      observation_payment_gjuels: input.observationPaymentGjuels,
+      transmission_payment_gjuels: input.transmissionPaymentGjuels,
+      gas_base: input.gasBase || 0,
+      gas_per_signature: input.gasPerSignature || 0,
     },
   ]
 }
@@ -29,11 +37,18 @@ const commandConfig: ExecuteCommandConfig<StarknetSetBillingInput, ContractInput
   ...SetBilling,
   makeUserInput: (flags: any, args: any): StarknetSetBillingInput => {
     if (flags.input) return flags.input as StarknetSetBillingInput
+    if (flags.rdd) {
+      const rdd = getRDD(flags.rdd)
+      const contractAddr = args[0]
+      const contract = rdd[CONTRACT_TYPES.AGGREGATOR][contractAddr]
+      return contract.billing
+    }
+
     return {
-      observationPaymentGjuels: flags.observationPaymentGjuels,
-      transmissionPaymentGjuels: flags.transmissionPaymentGjuels,
-      gasBase: flags.gasBase,
-      gasPerSignature: flags.gasPerSignature,
+      observationPaymentGjuels: parseInt(flags.observationPaymentGjuels),
+      transmissionPaymentGjuels: parseInt(flags.transmissionPaymentGjuels),
+      gasBase: parseInt(flags.gasBase || '0'), // optional
+      gasPerSignature: parseInt(flags.gasPerSignature || '0'), //optional
     }
   },
   makeContractInput: makeContractInput,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 )
 
 // NewPrometheusExporterFactory builds an implementation of the Exporter for prometheus.
@@ -88,7 +88,7 @@ func (p *prometheusExporter) Cleanup(_ context.Context) {
 	p.addressesMu.Lock()
 	defer p.addressesMu.Unlock()
 	for address := range p.addressesSet {
-		p.metrics.Cleanup(
+		p.metrics.CleanupProxy(
 			address,
 			p.feedConfig.GetContractAddress(),
 			p.chainConfig.GetChainID(),

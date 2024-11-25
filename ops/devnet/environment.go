@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/rs/zerolog/log"
-	"github.com/goplugin/plugin-env/client"
-	"github.com/goplugin/plugin-env/config"
-	"github.com/goplugin/plugin-env/environment"
+
+	"github.com/goplugin/plugin-testing-framework/k8s/client"
+	"github.com/goplugin/plugin-testing-framework/k8s/config"
+	"github.com/goplugin/plugin-testing-framework/k8s/environment"
+
 	"github.com/goplugin/plugin-starknet/ops/utils"
 )
 
@@ -51,17 +53,17 @@ func (m Chart) GetVersion() string {
 }
 
 func (m Chart) ExportData(e *environment.Environment) error {
-	devnetLocalHttp, err := e.Fwd.FindPort("starknet-dev:0", "starknetdev", "http").As(client.LocalConnection, client.HTTP)
+	devnetLocalHTTP, err := e.Fwd.FindPort("starknet-dev:0", "starknetdev", "http").As(client.LocalConnection, client.HTTP)
 	if err != nil {
 		return err
 	}
-	devnetInternalHttp, err := e.Fwd.FindPort("starknet-dev:0", "starknetdev", "http").As(client.RemoteConnection, client.HTTP)
+	devnetInternalHTTP, err := e.Fwd.FindPort("starknet-dev:0", "starknetdev", "http").As(client.RemoteConnection, client.HTTP)
 	if err != nil {
 		return err
 	}
-	e.URLs[NetworkName] = append(e.URLs[NetworkName], devnetLocalHttp)
-	e.URLs[NetworkName] = append(e.URLs[NetworkName], devnetInternalHttp)
-	log.Info().Str("Name", "Devnet").Str("URLs", devnetLocalHttp).Msg("Devnet network")
+	e.URLs[NetworkName] = append(e.URLs[NetworkName], devnetLocalHTTP)
+	e.URLs[NetworkName] = append(e.URLs[NetworkName], devnetInternalHTTP)
+	log.Info().Str("Name", "Devnet").Str("URLs", devnetLocalHTTP).Msg("Devnet network")
 	return nil
 }
 
@@ -70,8 +72,8 @@ func defaultProps() map[string]any {
 		"replicas": "1",
 		"starknet-dev": map[string]any{
 			"image": map[string]any{
-				"image":   "shardlabs/starknet-devnet",
-				"version": "v0.3.5",
+				"image":   "shardlabs/starknet-devnet-rs",
+				"version": "a147b4cd72f9ce9d1fa665d871231370db0f51c7",
 			},
 			"resources": map[string]any{
 				"requests": map[string]any{
@@ -87,7 +89,6 @@ func defaultProps() map[string]any {
 			"real_node": "false",
 		},
 	}
-
 }
 
 func New(props *Props) environment.ConnectedChart {

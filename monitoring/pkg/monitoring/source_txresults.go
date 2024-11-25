@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	relayMonitoring "github.com/goplugin/plugin-relay/pkg/monitoring"
+	"github.com/NethermindEth/juno/core/felt"
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
+
+	relayMonitoring "github.com/goplugin/plugin-common/pkg/monitoring"
 
 	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/ocr2"
 )
@@ -26,8 +29,12 @@ func (s *txResultsSourceFactory) NewSource(
 	_ relayMonitoring.ChainConfig,
 	feedConfig relayMonitoring.FeedConfig,
 ) (relayMonitoring.Source, error) {
+	contractAddress, err := starknetutils.HexToFelt(feedConfig.GetContractAddress())
+	if err != nil {
+		return nil, err
+	}
 	return &txResultsSource{
-		feedConfig.GetContractAddress(),
+		contractAddress,
 		s.ocr2Reader,
 		0,
 		sync.Mutex{},
@@ -39,7 +46,7 @@ func (s *txResultsSourceFactory) GetType() string {
 }
 
 type txResultsSource struct {
-	contractAddress string
+	contractAddress *felt.Felt
 	ocr2Reader      ocr2.OCR2Reader
 
 	prevRoundID   uint32

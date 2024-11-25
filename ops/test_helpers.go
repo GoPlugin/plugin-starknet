@@ -1,17 +1,5 @@
 package ops
 
-import (
-	"github.com/goplugin/plugin-starknet/relayer/pkg/plugin/txm"
-)
-
-var (
-	// seed = 0 keys for starknet-devnet
-	PrivateKeys0Seed = txm.PrivateKeys0Seed
-
-	DevnetClassHash = txm.DevnetClassHash
-	DevnetSalt      = txm.DevnetSalt
-)
-
 // OCR2Config Default config for OCR2 for starknet
 type OCR2Config struct {
 	F                     int             `json:"f"`
@@ -32,7 +20,7 @@ type OffchainConfig struct {
 	RMax                                               int                    `json:"rMax"`
 	S                                                  []int                  `json:"s"`
 	OffchainPublicKeys                                 []string               `json:"offchainPublicKeys"`
-	PeerIds                                            []string               `json:"peerIds"`
+	PeerIDs                                            []string               `json:"peerIds"`
 	ReportingPluginConfig                              *ReportingPluginConfig `json:"reportingPluginConfig"`
 	MaxDurationQueryNanoseconds                        int                    `json:"maxDurationQueryNanoseconds"`
 	MaxDurationObservationNanoseconds                  int                    `json:"maxDurationObservationNanoseconds"`
@@ -56,27 +44,28 @@ var TestOCR2Config = OCR2Config{
 	// Transmitters:  txKeys, // user defined
 	OnchainConfig: "",
 	OffchainConfig: &OffchainConfig{
-		DeltaProgressNanoseconds: 8000000000,
-		DeltaResendNanoseconds:   30000000000,
-		DeltaRoundNanoseconds:    3000000000,
-		DeltaGraceNanoseconds:    500000000,
-		DeltaStageNanoseconds:    20000000000,
+		// todo: increase delta round but decrease delta stage
+		DeltaProgressNanoseconds: 150000000000, // 120s
+		DeltaResendNanoseconds:   150000000000, // 150s
+		DeltaRoundNanoseconds:    90000000000,  // 90s
+		DeltaGraceNanoseconds:    5000000000,   // 5s
+		DeltaStageNanoseconds:    30000000000,  // 20s
 		RMax:                     5,
-		S:                        []int{1, 2},
+		S:                        []int{1, 1}, // Needs to array with length of transmitting nodes
 		// OffchainPublicKeys:       offChainKeys, // user defined
-		// PeerIds:                  peerIds, // user defined
+		// PeerIDs:                  peerIds, // user defined
 		ReportingPluginConfig: &ReportingPluginConfig{
 			AlphaReportInfinite: false,
 			AlphaReportPpb:      0,
 			AlphaAcceptInfinite: false,
 			AlphaAcceptPpb:      0,
-			DeltaCNanoseconds:   0,
+			DeltaCNanoseconds:   1000000000,
 		},
-		MaxDurationQueryNanoseconds:                        0,
+		MaxDurationQueryNanoseconds:                        2000000000,
 		MaxDurationObservationNanoseconds:                  1000000000,
-		MaxDurationReportNanoseconds:                       200000000,
-		MaxDurationShouldAcceptFinalizedReportNanoseconds:  200000000,
-		MaxDurationShouldTransmitAcceptedReportNanoseconds: 200000000,
+		MaxDurationReportNanoseconds:                       2000000000,
+		MaxDurationShouldAcceptFinalizedReportNanoseconds:  2000000000,
+		MaxDurationShouldTransmitAcceptedReportNanoseconds: 2000000000,
 		// ConfigPublicKeys:                                   cfgKeys, // user defined
 	},
 	OffchainConfigVersion: 2,

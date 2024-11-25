@@ -3,7 +3,7 @@ import {
   ExecuteCommandConfig,
   makeExecuteCommand,
   isValidAddress,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { CATEGORIES } from '../../lib/categories'
 import { ocr2ProxyLoader, CONTRACT_LIST } from '../../lib/contracts'
 

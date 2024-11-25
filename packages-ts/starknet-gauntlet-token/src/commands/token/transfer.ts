@@ -3,7 +3,7 @@ import {
   ExecuteCommandConfig,
   makeExecuteCommand,
   isValidAddress,
-} from '@pluginv3.0/starknet-gauntlet'
+} from '@plugin/starknet-gauntlet'
 import { uint256 } from 'starknet'
 import { CATEGORIES } from '../../lib/categories'
 import { tokenContractLoader, CONTRACT_LIST } from '../../lib/contracts'

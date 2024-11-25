@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
+	starknetutils "github.com/NethermindEth/starknet.go/utils"
 	"github.com/stretchr/testify/require"
-
-	"github.com/goplugin/plugin-starknet/relayer/pkg/starknet"
 )
 
 func TestNewRoundData(t *testing.T) {
@@ -19,7 +18,8 @@ func TestNewRoundData(t *testing.T) {
 		"0x633344a5",
 	}
 
-	felts := starknet.StringsToJunoFelts(raw)
+	felts, err := starknetutils.HexArrToFelt(raw)
+	require.NoError(t, err)
 	actualRound, err := NewRoundData(felts)
 	require.NoError(t, err)
 	expectedRound := RoundData{

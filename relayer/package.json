@@ -1,5 +1,5 @@
 {
-    "name": "@pluginv3.0/starknet-relayer",
+    "name": "@plugin/starknet-relayer",
     "version": "0.0.1",
     "license": "MIT",
     "dependencies": {},

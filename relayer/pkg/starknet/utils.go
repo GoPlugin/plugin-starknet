@@ -1,19 +1,19 @@
 package starknet
 
 import (
-	"bytes"
+	"cmp"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 
-	junotypes "github.com/NethermindEth/juno/pkg/types"
-	caigotypes "github.com/smartcontractkit/caigo/types"
-
-	"github.com/pkg/errors"
-	"golang.org/x/exp/constraints"
+	"github.com/NethermindEth/juno/core/felt"
 )
 
-const chunkSize = 31
+const (
+	FeltLength = 32
+	chunkSize  = 31
+)
 
 // padd bytes to specific length
 func PadBytes(a []byte, length int) []byte {
@@ -30,7 +30,7 @@ func NilResultError(funcName string) error {
 	return fmt.Errorf("nil result in %s", funcName)
 }
 
-func Min[T constraints.Ordered](a, b T) T {
+func Min[T cmp.Ordered](a, b T) T {
 	if a < b {
 		return a
 	}
@@ -77,7 +77,7 @@ func DecodeFelts(felts []*big.Int) ([]byte, error) {
 		felt.FillBytes(bytesBuffer)
 		data = append(data, bytesBuffer...)
 
-		length -= uint64(bytesLen)
+		length -= bytesLen
 	}
 
 	if length != 0 {
@@ -87,75 +87,12 @@ func DecodeFelts(felts []*big.Int) ([]byte, error) {
 	return data, nil
 }
 
-// SignedBigToFelt wraps negative values correctly into felt
-func SignedBigToFelt(num *big.Int) *big.Int {
-	return new(big.Int).Mod(num, caigotypes.MaxFelt.Big())
-}
-
-// FeltToSigned unwraps felt into negative values
-func FeltToSignedBig(felt *caigotypes.Felt) (num *big.Int) {
-	num = felt.Big()
-	prime := caigotypes.MaxFelt.Big()
-	half := new(big.Int).Div(prime, big.NewInt(2))
-	// if num > PRIME/2, then -PRIME to convert to negative value
-	if num.Cmp(half) > 0 {
-		return new(big.Int).Sub(num, prime)
-	}
-	return num
-}
-
-func HexToSignedBig(str string) (num *big.Int) {
-	felt := junotypes.HexToFelt(str)
-	return FeltToSignedBig(&caigotypes.Felt{Int: felt.Big()})
-}
-
-func FeltsToBig(in []*caigotypes.Felt) (out []*big.Int) {
+func FeltsToBig(in []*felt.Felt) (out []*big.Int) {
 	for _, f := range in {
-		out = append(out, f.Int)
+		out = append(out, f.BigInt(big.NewInt(0)))
 	}
 
 	return out
-}
-
-// StringsToFelt maps felts from 'string' (hex) representation to 'caigo.Felt' representation
-func StringsToFelt(in []string) (out []*caigotypes.Felt, _ error) {
-	if in == nil {
-		return nil, errors.New("invalid: input value")
-	}
-
-	for _, f := range in {
-		felt := caigotypes.StrToFelt(f)
-		if felt == nil {
-			return nil, errors.New("invalid: string value")
-		}
-
-		out = append(out, felt)
-	}
-
-	return out, nil
-}
-
-func StringsToJunoFelts(in []string) []junotypes.Felt {
-	out := make([]junotypes.Felt, len(in))
-	for i := 0; i < len(in); i++ {
-		out[i] = junotypes.HexToFelt(in[i])
-	}
-	return out
-}
-
-// CompareAddress compares different hex starknet addresses with potentially different 0 padding
-func CompareAddress(a, b string) bool {
-	aBytes, err := caigotypes.HexToBytes(a)
-	if err != nil {
-		return false
-	}
-
-	bBytes, err := caigotypes.HexToBytes(b)
-	if err != nil {
-		return false
-	}
-
-	return bytes.Equal(PadBytes(aBytes, 32), PadBytes(bBytes, 32))
 }
 
 /* Testing utils - do not use (XXX) outside testing context */

@@ -1,4 +1,4 @@
-import { EVMExecuteCommandConfig, makeEVMExecuteCommand } from '@pluginv3.0/evm-gauntlet'
+import { EVMExecuteCommandConfig, makeEVMExecuteCommand } from '@plugin/evm-gauntlet'
 import { CONTRACT_LIST, starknetValidatorContractLoader } from '../../lib/contracts'
 import { CATEGORIES } from '../../lib/categories'
 

@@ -1,18 +1,7 @@
 import deployCommand from '../../src/commands/accessController/deploy'
-import {
-  registerExecuteCommand,
-  TIMEOUT,
-  startNetwork,
-  IntegratedDevnet,
-} from '@pluginv3.0/starknet-gauntlet/test/utils'
+import { registerExecuteCommand, TIMEOUT } from '@plugin/starknet-gauntlet/test/utils'
 
 describe('Access Controller Contract', () => {
-  let network: IntegratedDevnet
-
-  beforeAll(async () => {
-    network = await startNetwork()
-  }, 15000)
-
   it(
     'Deployment',
     async () => {
@@ -23,8 +12,4 @@ describe('Access Controller Contract', () => {
     },
     TIMEOUT,
   )
-
-  afterAll(() => {
-    network.stop()
-  })
 })

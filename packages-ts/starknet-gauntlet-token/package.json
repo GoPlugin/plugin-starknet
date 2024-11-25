@@ -1,5 +1,5 @@
 {
-  "name": "@pluginv3.0/starknet-gauntlet-token",
+  "name": "@plugin/starknet-gauntlet-token",
   "version": "0.0.1",
   "description": "Gauntlet Starknet Starkgate contracts",
   "keywords": [
@@ -25,10 +25,10 @@
     "bundle": "yarn build && pkg ."
   },
   "dependencies": {
-    "@pluginv3.0/evm-gauntlet": "^0.4.0",
-    "@pluginv3.0/gauntlet-core": "0.3.1",
-    "@pluginv3.0/starknet-gauntlet": "*",
-    "@pluginv3.0/starknet-gauntlet-oz": "*",
+    "@plugin/evm-gauntlet": "^0.4.0",
+    "@plugin/gauntlet-core": "0.3.1",
+    "@plugin/starknet-gauntlet": "*",
+    "@plugin/starknet-gauntlet-oz": "*",
     "ethers": "^5.6.9"
   }
 }
