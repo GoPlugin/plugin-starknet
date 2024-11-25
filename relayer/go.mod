@@ -11,8 +11,10 @@ require (
 	github.com/pelletier/go-toml/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/smartcontractkit/caigo v0.0.0-20230621050857-b29a4ca8c704
-	github.com/goplugin/plugin-common v0.1.7-0.20231205033838-dfac15e672d4
-	github.com/goplugin/plugin-libocr v0.0.0-20230925165524-ffa38fe11ef8
+	github.com/goplugin/plugin-common v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-libocr v0.1.1-beta //plugin update changes
+	//github.com/goplugin/plugin-common v0.1.7-0.20231205033838-dfac15e672d4
+	//github.com/goplugin/plugin-libocr v0.0.0-20230925165524-ffa38fe11ef8
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.26.0
@@ -90,9 +92,11 @@ replace (
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 	// until merged upstream: https://github.com/hashicorp/go-plugin/pull/257
-	github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20231003134350-e49dad63b306
+	github.com/hashicorp/go-plugin => github.com/goplugin/go-plugin v0.0.1
+	//github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20231003134350-e49dad63b306
 
 	// until merged upstream: https://github.com/mwitkow/grpc-proxy/pull/69
-	github.com/mwitkow/grpc-proxy => github.com/goplugin/grpc-proxy v0.0.0-20230731113816-f1be6620749f
+	github.com/mwitkow/grpc-proxy => github.com/goplugin/grpc-proxy v0.1.1 //plugin update changes
+	//github.com/mwitkow/grpc-proxy => github.com/goplugin/grpc-proxy v0.0.0-20230731113816-f1be6620749f
 
 )

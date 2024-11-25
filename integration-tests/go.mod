@@ -6,11 +6,16 @@ require (
 	github.com/rs/zerolog v1.30.0
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/smartcontractkit/caigo v0.0.0-20230621050857-b29a4ca8c704
-	github.com/goplugin/plugin-common v0.1.7-0.20231205033838-dfac15e672d4
-	github.com/goplugin/plugin-starknet/ops v0.0.0-20231117204155-b253a2f56664
-	github.com/goplugin/plugin-starknet/relayer v0.0.1-beta-test.0.20231205042215-976232e40c59
-	github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20231205043820-1cd875f11d60
-	github.com/goplugin/pluginv3.0/v2 v2.8.0-beta0.0.20231205043820-1cd875f11d60
+	github.com/goplugin/plugin-common v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-starknet/ops v0.0.2 //plugin update changes
+	github.com/goplugin/plugin-starknet/relayer v0.0.2 //plugin update changes
+	//github.com/goplugin/plugin-common v0.1.7-0.20231205033838-dfac15e672d4
+	//github.com/goplugin/plugin-starknet/ops v0.0.0-20231117204155-b253a2f56664
+	//github.com/goplugin/plugin-starknet/relayer v0.0.1-beta-test.0.20231205042215-976232e40c59
+	github.com/goplugin/pluginv3.0/integration-tests v2.1.0
+	github.com/goplugin/pluginv3.0/v2 v2.1.0
+	//github.com/goplugin/pluginv3.0/integration-tests v0.0.0-20231205043820-1cd875f11d60
+	/github.com/goplugin/pluginv3.0/v2 v2.8.0-beta0.0.20231205043820-1cd875f11d60
 )
 
 require (
@@ -23,7 +28,8 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
-	github.com/goplugin/plugin-data-streams v0.0.0-20231204152908-a6e3fe8ff2a1 // indirect
+	github.com/goplugin/plugin-data-streams v0.1.1-beta //plugin update changes
+	//github.com/goplugin/plugin-data-streams v0.0.0-20231204152908-a6e3fe8ff2a1 // indirect
 	go.opentelemetry.io/collector/pdata v1.0.0-rcv0016 // indirect
 	go.opentelemetry.io/collector/semconv v0.87.0 // indirect
 )
@@ -337,18 +343,27 @@ require (
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/slack-go/slack v0.12.2 // indirect
-	github.com/goplugin/plugin-automation v1.0.1 // indirect
-	github.com/goplugin/plugin-cosmos v0.4.1-0.20231205042618-bd88172cddd3 // indirect
-	github.com/goplugin/plugin-feeds v0.0.0-20231127231053-2232d3a6766d // indirect
-	github.com/goplugin/plugin-solana v1.0.3-0.20231205041407-c90fe4d6f696 // indirect
-	github.com/goplugin/plugin-testing-framework v1.20.0
-	github.com/goplugin/plugin-vrf v0.0.0-20231120191722-fef03814f868 // indirect
-	github.com/goplugin/plugin-libocr v0.0.0-20231130143053-c5102a9c0fb7 // indirect
-	github.com/goplugin/tdh2/go/ocr2/decryptionplugin v0.0.0-20230906073235-9e478e5e19f1 // indirect
-	github.com/goplugin/tdh2/go/tdh2 v0.0.0-20230906073235-9e478e5e19f1 // indirect
+	github.com/goplugin/plugin-automation v0.0.1-beta //plugin update changes
+	github.com/goplugin/plugin-cosmos v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-feeds v0.0.1-beta //plugin update changes
+	github.com/goplugin/plugin-solana v0.0.1-beta //plugin update changes
+	github.com/goplugin/plugin-testing-framework v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-vrf v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-libocr v0.1.1-beta //plugin update changes
+	github.com/goplugin/tdh2/go/ocr2/decryptionplugin v0.2.1 //plugin update changes
+	github.com/goplugin/tdh2/go/tdh2 v0.2.1 //plugin update changes
+	//github.com/goplugin/plugin-cosmos v0.4.1-0.20231205042618-bd88172cddd3 // indirect
+	//github.com/goplugin/plugin-feeds v0.0.0-20231127231053-2232d3a6766d // indirect
+	//github.com/goplugin/plugin-solana v1.0.3-0.20231205041407-c90fe4d6f696 // indirect
+	//github.com/goplugin/plugin-testing-framework v1.20.0
+	//github.com/goplugin/plugin-vrf v0.0.1
+	//github.com/goplugin/plugin-libocr v0.0.0-20231130143053-c5102a9c0fb7 // indirect
+	//github.com/goplugin/tdh2/go/ocr2/decryptionplugin v0.0.0-20230906073235-9e478e5e19f1 // indirect
+	//github.com/goplugin/tdh2/go/tdh2 v0.0.0-20230906073235-9e478e5e19f1 // indirect
 	github.com/goplugin/wasp v0.0.1 // indirect
 	//github.com/smartcontractkit/wasp v0.3.6 // indirect
-	github.com/goplugin/wsrpc v0.7.2 // indirect
+	github.com/goplugin/wsrpc v0.1.1 //plugin update changes
+	//github.com/goplugin/wsrpc v0.7.2 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
@@ -465,10 +480,12 @@ replace (
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 	// until merged upstream: https://github.com/hashicorp/go-plugin/pull/257
-	github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20231003134350-e49dad63b306
+	github.com/hashicorp/go-plugin => github.com/goplugin/go-plugin v0.0.1
+	//github.com/hashicorp/go-plugin => github.com/smartcontractkit/go-plugin v0.0.0-20231003134350-e49dad63b306
 
 	// until merged upstream: https://github.com/mwitkow/grpc-proxy/pull/69
-	github.com/mwitkow/grpc-proxy => github.com/goplugin/grpc-proxy v0.0.0-20230731113816-f1be6620749f
+	github.com/mwitkow/grpc-proxy => github.com/goplugin/grpc-proxy v0.1.1 //plugin update changes
+	//github.com/mwitkow/grpc-proxy => github.com/goplugin/grpc-proxy v0.0.0-20230731113816-f1be6620749f
 
 	github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.0
 
