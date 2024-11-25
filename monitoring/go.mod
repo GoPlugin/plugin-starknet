@@ -8,9 +8,12 @@ require (
 	github.com/NethermindEth/juno v0.3.1
 	github.com/NethermindEth/starknet.go v0.7.1-0.20240401080518-34a506f3cfdb
 	github.com/prometheus/client_golang v1.20.0
-	github.com/goplugin/plugin-common v0.3.0
-	github.com/goplugin/plugin-starknet/relayer v0.0.0-20230508053614-9f2fd5fd4ff1
-	github.com/goplugin/plugin-libocr v0.0.0-20241007185508-adbe57025f12
+	github.com/goplugin/plugin-common v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-starknet/relayer v0.0.1 //plugin update changes
+	github.com/goplugin/plugin-libocr v0.1.1 //plugin update changes
+	//github.com/goplugin/plugin-common v0.3.0
+	//github.com/goplugin/plugin-starknet/relayer v0.0.0-20230508053614-9f2fd5fd4ff1
+	//github.com/goplugin/plugin-libocr v0.0.0-20241007185508-adbe57025f12
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/multierr v1.11.0
 )
@@ -91,7 +94,8 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/goplugin/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7 // indirect
+	github.com/goplugin/grpc-proxy v0.11 //plugin update changes
+	//github.com/goplugin/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
